@@ -126,12 +126,22 @@ export function PhotoCard({ photo, onDeleted }: PhotoCardProps) {
         )}
       </div>
 
-      <img
-        src={photo.image_url}
-        alt={photo.caption ?? 'Foto do evento'}
-        loading="lazy"
-        className="w-full bg-black object-cover"
-      />
+      {photo.media_type === 'video' ? (
+        <video
+          src={photo.image_url}
+          controls
+          playsInline
+          preload="metadata"
+          className="w-full bg-black"
+        />
+      ) : (
+        <img
+          src={photo.image_url}
+          alt={photo.caption ?? 'Foto do evento'}
+          loading="lazy"
+          className="w-full bg-black object-cover"
+        />
+      )}
 
       <div className="px-4 py-3">
         <div className="flex items-center gap-3">

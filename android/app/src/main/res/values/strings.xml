@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Feed do Evento</string>
+    <string name="title_activity_main">Feed do Evento</string>
+    <string name="package_name">com.valentimm.eventphotofeed</string>
+    <string name="custom_url_scheme">com.valentimm.eventphotofeed</string>
+</resources>

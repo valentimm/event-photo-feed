@@ -29,6 +29,7 @@ create table if not exists public.photos (
   user_id     uuid not null references public.users (id) on delete cascade,
   image_url   text not null,
   image_path  text,                       -- caminho no Storage (para apagar o arquivo)
+  media_type  text not null default 'image',  -- 'image' ou 'video'
   caption     text,
   created_at  timestamptz not null default now()
 );

@@ -89,9 +89,83 @@ supabase/
   schema.sql      # rode no SQL Editor do Supabase
 ```
 
+## 📱 Versão app (iOS e Android com Capacitor)
+
+O app web é empacotado num app nativo com [Capacitor](https://capacitorjs.com/),
+mantendo a mesma base de código. Os projetos nativos ficam em `android/` e `ios/`.
+
+### Pré-requisitos
+
+- **Android**: [Android Studio](https://developer.android.com/studio) (funciona no Windows/Mac/Linux).
+- **iOS**: um **Mac** com [Xcode](https://developer.apple.com/xcode/) e CocoaPods
+  (`sudo gem install cocoapods`). Não é possível compilar iOS no Windows.
+- Contas de desenvolvedor para publicar:
+  - **Apple Developer Program** — US$ 99/ano
+  - **Google Play Console** — US$ 25 (taxa única)
+
+> O `appId` está definido como `com.valentimm.eventphotofeed` em
+> `capacitor.config.ts`. Troque para o seu domínio reverso antes de publicar.
+
+### Fluxo de desenvolvimento
+
+Sempre que mudar o código web, rode o build + sync antes de abrir o projeto nativo:
+
+```bash
+npm run sync        # build do web + copia para android/ e ios/
+```
+
+Atalhos que já fazem build + sync + abrir a IDE nativa:
+
+```bash
+npm run android     # abre o Android Studio
+npm run ios         # abre o Xcode (somente no Mac)
+```
+
+### Publicar na Google Play (Android)
+
+1. `npm run android` (abre o Android Studio).
+2. Em **Build → Generate Signed Bundle / APK → Android App Bundle (.aab)**.
+3. Crie/forneça uma **keystore** (guarde bem — ela assina todas as atualizações).
+4. Gere o `.aab` em modo **release**.
+5. No [Google Play Console](https://play.google.com/console): crie o app, preencha
+   a ficha da loja (ícone, descrição, screenshots, política de privacidade) e
+   envie o `.aab` em uma trilha (Internal testing → Production).
+
+### Publicar na App Store (iOS) — no Mac
+
+1. `npm run ios` (abre o Xcode).
+2. Em **Signing & Capabilities**, selecione seu **Team** (conta Apple Developer).
+3. Ajuste **Bundle Identifier**, versão e ícones.
+4. Selecione **Any iOS Device** e vá em **Product → Archive**.
+5. No Organizer, **Distribute App → App Store Connect**.
+6. No [App Store Connect](https://appstoreconnect.apple.com): preencha a ficha,
+   anexe o build e envie para revisão.
+
+### Foto e vídeo
+
+O feed aceita **fotos e vídeos** (coluna `media_type` em `photos`). Vídeos têm
+limite de **20 segundos**, validado no app após a seleção.
+
+- **Foto**: no app nativo usa o plugin
+  [`@capacitor/camera`](https://capacitorjs.com/docs/apis/camera) (Câmera/Galeria);
+  na web, faz fallback para `<input type="file" capture>`.
+- **Vídeo**: usa `<input type="file" accept="video/*" capture>` (abre a câmera de
+  vídeo no celular; funciona na web e no app).
+
+> Se você já tinha criado a tabela `photos` antes, rode
+> `supabase/add_media_type.sql` no SQL Editor para adicionar a coluna `media_type`.
+
+As permissões já estão declaradas:
+
+- **Android** (`android/app/src/main/AndroidManifest.xml`): `CAMERA`,
+  `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`.
+- **iOS** (`ios/App/App/Info.plist`): `NSCameraUsageDescription`,
+  `NSPhotoLibraryUsageDescription`, `NSPhotoLibraryAddUsageDescription`.
+
 ## ⚠️ Observação de segurança
 
-O login é **sem senha** (não usa Supabase Auth), então as policies de RLS são
-**públicas** e a regra "só apaga a própria foto" é garantida **na aplicação**.
-É adequado para um evento descontraído, mas **não é segurança forte** — qualquer
-pessoa com a chave anon e a URL poderia manipular os dados diretamente.
+O login usa **nome e sobrenome + senha simples em texto puro** (não usa Supabase
+Auth) e as policies de RLS são **públicas**; a regra "só apaga a própria foto" é
+garantida **na aplicação**. É adequado para um evento descontraído, mas **não é
+segurança forte** — qualquer pessoa com a chave e a URL poderia manipular os
+dados diretamente.

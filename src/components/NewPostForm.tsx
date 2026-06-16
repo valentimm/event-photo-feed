@@ -1,59 +1,160 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { PHOTOS_BUCKET, supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import type { MediaType } from '../lib/types'
 
 interface NewPostFormProps {
   onPosted: () => void
 }
 
-function fileExtension(name: string): string {
+interface PickedMedia {
+  blob: Blob
+  ext: string
+  previewUrl: string
+  mediaType: MediaType
+}
+
+const isNative = Capacitor.isNativePlatform()
+const MAX_VIDEO_SECONDS = 20
+
+function extFromMime(mime: string): string {
+  if (mime.includes('png')) return 'png'
+  if (mime.includes('webp')) return 'webp'
+  if (mime.includes('heic')) return 'heic'
+  if (mime.includes('quicktime') || mime.includes('mov')) return 'mov'
+  if (mime.includes('mp4')) return 'mp4'
+  if (mime.includes('webm')) return 'webm'
+  return 'jpg'
+}
+
+function extFromName(name: string): string {
   const idx = name.lastIndexOf('.')
   return idx >= 0 ? name.slice(idx + 1).toLowerCase() : 'jpg'
 }
 
+/** Lê a duração (em segundos) de um vídeo a partir do object URL. */
+function getVideoDuration(url: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.onloadedmetadata = () => resolve(video.duration)
+    video.onerror = () => reject(new Error('Não foi possível ler o vídeo.'))
+    video.src = url
+  })
+}
+
 export function NewPostForm({ onPosted }: NewPostFormProps) {
   const { user } = useAuth()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const [media, setMedia] = useState<PickedMedia | null>(null)
   const [caption, setCaption] = useState('')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    return () => {
+      if (media) URL.revokeObjectURL(media.previewUrl)
+    }
+  }, [media])
+
+  function setPicked(next: PickedMedia | null) {
+    setMedia((prev) => {
+      if (prev) URL.revokeObjectURL(prev.previewUrl)
+      return next
+    })
+  }
+
+  /** Foto pela câmera/galeria nativa (iOS/Android) via Capacitor. */
+  async function pickNativePhoto(source: CameraSource) {
+    setError(null)
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 80,
+        allowEditing: false,
+        resultType: CameraResultType.Uri,
+        source,
+      })
+      if (!photo.webPath) throw new Error('Não foi possível obter a foto.')
+      const res = await fetch(photo.webPath)
+      const blob = await res.blob()
+      setPicked({
+        blob,
+        ext: photo.format || extFromMime(blob.type),
+        previewUrl: URL.createObjectURL(blob),
+        mediaType: 'image',
+      })
+    } catch (err) {
+      if (err instanceof Error && /cancel/i.test(err.message)) return
+      setError(err instanceof Error ? err.message : 'Falha ao abrir a câmera.')
+    }
+  }
+
+  function handlePhotoFile(e: ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0] ?? null
     setError(null)
-    setFile(selected)
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev)
-      return selected ? URL.createObjectURL(selected) : null
-    })
+    setPicked(
+      selected
+        ? {
+            blob: selected,
+            ext: extFromName(selected.name),
+            previewUrl: URL.createObjectURL(selected),
+            mediaType: 'image',
+          }
+        : null,
+    )
+  }
+
+  async function handleVideoFile(e: ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0] ?? null
+    setError(null)
+    if (!selected) return
+
+    const url = URL.createObjectURL(selected)
+    try {
+      const duration = await getVideoDuration(url)
+      if (duration > MAX_VIDEO_SECONDS + 0.5) {
+        URL.revokeObjectURL(url)
+        setError(
+          `O vídeo tem ${Math.round(duration)}s. O limite é de ${MAX_VIDEO_SECONDS} segundos.`,
+        )
+        if (videoInputRef.current) videoInputRef.current.value = ''
+        return
+      }
+      setPicked({
+        blob: selected,
+        ext: extFromName(selected.name) || extFromMime(selected.type),
+        previewUrl: url,
+        mediaType: 'video',
+      })
+    } catch (err) {
+      URL.revokeObjectURL(url)
+      setError(err instanceof Error ? err.message : 'Falha ao ler o vídeo.')
+    }
   }
 
   function reset() {
-    setFile(null)
+    setPicked(null)
     setCaption('')
     setError(null)
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev)
-      return null
-    })
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    if (photoInputRef.current) photoInputRef.current.value = ''
+    if (videoInputRef.current) videoInputRef.current.value = ''
   }
 
   async function handlePost() {
-    if (!file || !user) return
+    if (!media || !user) return
     setUploading(true)
     setError(null)
     try {
-      const ext = fileExtension(file.name)
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`
+      const path = `${user.id}/${crypto.randomUUID()}.${media.ext}`
 
       const { error: uploadError } = await supabase.storage
         .from(PHOTOS_BUCKET)
-        .upload(path, file, {
+        .upload(path, media.blob, {
           cacheControl: '3600',
-          contentType: file.type || undefined,
+          contentType: media.blob.type || `${media.mediaType}/${media.ext}`,
           upsert: false,
         })
       if (uploadError) throw uploadError
@@ -66,10 +167,10 @@ export function NewPostForm({ onPosted }: NewPostFormProps) {
         user_id: user.id,
         image_url: publicUrl,
         image_path: path,
+        media_type: media.mediaType,
         caption: caption.trim() || null,
       })
       if (insertError) {
-        // Limpa o arquivo órfão se o registro falhar.
         await supabase.storage.from(PHOTOS_BUCKET).remove([path])
         throw insertError
       }
@@ -77,7 +178,7 @@ export function NewPostForm({ onPosted }: NewPostFormProps) {
       reset()
       onPosted()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao postar a foto.')
+      setError(err instanceof Error ? err.message : 'Falha ao postar.')
     } finally {
       setUploading(false)
     }
@@ -85,13 +186,22 @@ export function NewPostForm({ onPosted }: NewPostFormProps) {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      {previewUrl ? (
+      {media ? (
         <div className="space-y-3">
-          <img
-            src={previewUrl}
-            alt="Pré-visualização"
-            className="max-h-80 w-full rounded-xl object-cover"
-          />
+          {media.mediaType === 'video' ? (
+            <video
+              src={media.previewUrl}
+              controls
+              playsInline
+              className="max-h-80 w-full rounded-xl bg-black"
+            />
+          ) : (
+            <img
+              src={media.previewUrl}
+              alt="Pré-visualização"
+              className="max-h-80 w-full rounded-xl object-cover"
+            />
+          )}
           <input
             type="text"
             value={caption}
@@ -119,22 +229,64 @@ export function NewPostForm({ onPosted }: NewPostFormProps) {
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/15 px-4 py-6 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
-        >
-          <span className="text-2xl">📷</span>
-          <span className="font-medium">Tirar / escolher foto</span>
-        </button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            {isNative ? (
+              <>
+                <button
+                  onClick={() => pickNativePhoto(CameraSource.Camera)}
+                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+                >
+                  <span className="text-2xl">📷</span>
+                  <span className="text-sm font-medium">Câmera</span>
+                </button>
+                <button
+                  onClick={() => pickNativePhoto(CameraSource.Photos)}
+                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+                >
+                  <span className="text-2xl">🖼️</span>
+                  <span className="text-sm font-medium">Galeria</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+              >
+                <span className="text-2xl">📷</span>
+                <span className="text-sm font-medium">Foto</span>
+              </button>
+            )}
+            <button
+              onClick={() => videoInputRef.current?.click()}
+              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+            >
+              <span className="text-2xl">🎥</span>
+              <span className="text-sm font-medium">Vídeo</span>
+            </button>
+          </div>
+          <p className="text-center text-xs text-zinc-500">
+            Vídeo de até {MAX_VIDEO_SECONDS} segundos.
+          </p>
+          {error && <p className="text-center text-sm text-red-400">{error}</p>}
+        </div>
       )}
 
       <input
-        ref={fileInputRef}
+        ref={photoInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={handleFileChange}
+        onChange={handlePhotoFile}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleVideoFile}
       />
     </div>
   )
