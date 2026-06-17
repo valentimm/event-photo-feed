@@ -25,40 +25,40 @@ export function EventWelcome({ event, stats, onJoin }: EventWelcomeProps) {
         <p className="text-sm font-medium uppercase tracking-widest ev-text-accent">
           {typeInfo.label}
         </p>
-        <h1 className="mt-2 max-w-md text-3xl font-bold text-white">{event.name}</h1>
+        <h1 className="mt-2 max-w-md text-3xl font-bold ev-text">{event.name}</h1>
 
-        {dateLabel && <p className="mt-2 text-zinc-400">{dateLabel}</p>}
+        {dateLabel && <p className="mt-2 ev-text-muted">{dateLabel}</p>}
 
         {event.description && (
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-zinc-400">
+          <p className="mt-4 max-w-sm text-sm leading-relaxed ev-text-muted">
             {event.description}
           </p>
         )}
 
-        <div className="mt-8 flex flex-wrap justify-center gap-4 text-sm text-zinc-300">
+        <div className="mt-8 flex flex-wrap justify-center gap-4 text-sm ev-text-muted">
           <span>
-            <strong className="text-white">{totalMedia}</strong> mídias
+            <strong className="ev-text">{totalMedia}</strong> mídias
           </span>
-          <span className="text-zinc-600">•</span>
+          <span>•</span>
           <span>
-            <strong className="text-white">{stats.members}</strong> participantes
+            <strong className="ev-text">{stats.members}</strong> participantes
           </span>
         </div>
 
         <div className="mt-10 w-full max-w-sm space-y-3">
           <button
             onClick={onJoin}
-            className="w-full rounded-2xl px-6 py-4 text-lg font-bold text-white transition ev-bg-primary ev-bg-primary-hover ev-shadow-primary"
+            className="w-full rounded-2xl px-6 py-4 text-lg font-bold transition ev-bg-primary ev-bg-primary-hover ev-shadow-primary"
           >
             Participar do evento
           </button>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs ev-text-muted">
             Compartilhe suas fotos e vídeos — sem baixar app, direto pelo navegador.
           </p>
         </div>
       </div>
 
-      <footer className="border-t border-white/5 px-6 py-4 text-center text-xs text-zinc-600">
+      <footer className="ev-divider border-t px-6 py-4 text-center text-xs ev-text-muted">
         Feed colaborativo • {getEventJoinUrl(event.id).replace(/^https?:\/\//, '')}
       </footer>
     </div>

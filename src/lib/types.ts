@@ -10,6 +10,9 @@ export interface Event {
   event_type: string
   event_date: string | null
   description: string | null
+  color_background: string
+  color_text: string
+  color_text_muted: string
   color_primary: string
   color_accent: string
   color_gradient_start: string

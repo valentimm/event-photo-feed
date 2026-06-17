@@ -76,7 +76,7 @@ export function Feed({ eventId }: FeedProps) {
       <NewPostForm eventId={eventId} onPosted={loadPhotos} />
 
       {!loading && photos.length > 0 && (
-        <div className="flex rounded-xl border border-white/10 bg-white/5 p-1">
+        <div className="flex rounded-xl ev-surface p-1">
           {(
             [
               { id: 'feed' as const, label: 'Feed', icon: '📋' },
@@ -88,7 +88,7 @@ export function Feed({ eventId }: FeedProps) {
               key={mode.id}
               onClick={() => setView(mode.id)}
               className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-medium transition sm:text-sm ${
-                view === mode.id ? 'ev-view-active' : 'text-zinc-400 hover:text-white'
+                view === mode.id ? 'ev-view-active' : 'ev-view-inactive'
               }`}
             >
               <span>{mode.icon}</span>
@@ -98,7 +98,7 @@ export function Feed({ eventId }: FeedProps) {
         </div>
       )}
 
-      {loading && <p className="py-10 text-center text-zinc-500">Carregando memórias…</p>}
+      {loading && <p className="py-10 text-center ev-text-muted">Carregando memórias…</p>}
 
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
@@ -109,8 +109,8 @@ export function Feed({ eventId }: FeedProps) {
       {!loading && !error && photos.length === 0 && (
         <div className="py-12 text-center">
           <p className="text-4xl">📷</p>
-          <p className="mt-3 text-zinc-400">Nenhuma memória ainda.</p>
-          <p className="mt-1 text-sm text-zinc-500">Seja o primeiro a compartilhar!</p>
+          <p className="mt-3 ev-text-muted">Nenhuma memória ainda.</p>
+          <p className="mt-1 text-sm ev-text-muted">Seja o primeiro a compartilhar!</p>
         </div>
       )}
 
@@ -130,7 +130,7 @@ export function Feed({ eventId }: FeedProps) {
             <button
               key={photo.id}
               onClick={() => openLightbox(photo.id)}
-              className="relative aspect-square overflow-hidden rounded-lg bg-zinc-900"
+              className="relative aspect-square overflow-hidden rounded-lg ev-surface-soft"
             >
               {photo.media_type === 'video' ? (
                 <>
@@ -155,7 +155,7 @@ export function Feed({ eventId }: FeedProps) {
       {view === 'timeline' &&
         timelineGroups.map((group) => (
           <section key={group.label}>
-            <div className="sticky top-[57px] z-[5] mb-3 border-b ev-border-accent-soft bg-zinc-950/90 py-2 backdrop-blur">
+            <div className="ev-sticky-bar sticky top-[57px] z-[5] mb-3 border-b ev-border-accent-soft py-2">
               <h3 className="text-sm font-semibold capitalize ev-text-accent-strong">{group.label}</h3>
             </div>
             <div className="space-y-4">

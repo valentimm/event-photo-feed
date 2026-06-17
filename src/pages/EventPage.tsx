@@ -82,13 +82,13 @@ export function EventPage() {
 
   if (!event.is_active) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950 p-6 text-center">
-        <p className="text-xl font-semibold text-white">{event.name}</p>
-        <p className="text-zinc-400">Este evento está encerrado.</p>
-        <Link to="/" className="text-sm text-zinc-400 hover:text-white">
+      <EventThemeProvider event={event} className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-xl font-semibold ev-text">{event.name}</p>
+        <p className="ev-text-muted">Este evento está encerrado.</p>
+        <Link to="/" className="text-sm ev-link-muted">
           ← Voltar
         </Link>
-      </div>
+      </EventThemeProvider>
     )
   }
 
@@ -105,7 +105,7 @@ export function EventPage() {
   }
 
   return (
-    <EventThemeProvider event={event} className="min-h-screen bg-zinc-950 text-white">
+    <EventThemeProvider event={event} className="min-h-screen ev-bg-page">
       <Header event={event} stats={stats ?? undefined} />
       <Feed eventId={event.id} />
     </EventThemeProvider>

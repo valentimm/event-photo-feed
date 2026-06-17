@@ -3,6 +3,7 @@ import { EventThemeProvider } from './EventThemeProvider'
 import { EventLogo } from './EventLogo'
 import {
   DEFAULT_EVENT_THEME,
+  LIGHT_INVITE_PRESET,
   THEME_COLOR_FIELDS,
   themeFromEvent,
 } from '../lib/eventTheme'
@@ -14,11 +15,16 @@ interface EventBrandingFormProps {
   onUpdated: (event: Event) => void
 }
 
+type ThemeColors = Omit<ReturnType<typeof themeFromEvent>, 'logo_url'>
+
 export function EventBrandingForm({ event, onUpdated }: EventBrandingFormProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const initial = themeFromEvent(event)
 
-  const [colors, setColors] = useState({
+  const [colors, setColors] = useState<ThemeColors>({
+    color_background: initial.color_background,
+    color_text: initial.color_text,
+    color_text_muted: initial.color_text_muted,
     color_primary: initial.color_primary,
     color_accent: initial.color_accent,
     color_gradient_start: initial.color_gradient_start,
@@ -69,6 +75,9 @@ export function EventBrandingForm({ event, onUpdated }: EventBrandingFormProps) 
 
   function resetColors() {
     setColors({
+      color_background: DEFAULT_EVENT_THEME.color_background,
+      color_text: DEFAULT_EVENT_THEME.color_text,
+      color_text_muted: DEFAULT_EVENT_THEME.color_text_muted,
       color_primary: DEFAULT_EVENT_THEME.color_primary,
       color_accent: DEFAULT_EVENT_THEME.color_accent,
       color_gradient_start: DEFAULT_EVENT_THEME.color_gradient_start,
@@ -76,11 +85,16 @@ export function EventBrandingForm({ event, onUpdated }: EventBrandingFormProps) 
     })
   }
 
+  function applyLightInvitePreset() {
+    setColors({ ...LIGHT_INVITE_PRESET })
+  }
+
   return (
     <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
       <h2 className="mb-1 font-semibold">Personalização visual</h2>
       <p className="mb-4 text-sm text-zinc-400">
-        Cores e logo aparecem na página do evento para convidados (QR Code).
+        Cores e logo aparecem na página do evento para convidados (QR Code). Use o preset claro
+        para um visual estilo convite de casamento.
       </p>
 
       <form onSubmit={handleSave} className="space-y-5">
@@ -144,18 +158,18 @@ export function EventBrandingForm({ event, onUpdated }: EventBrandingFormProps) 
           </div>
         </div>
 
-        {/* Pré-visualização */}
         <EventThemeProvider event={previewEvent}>
-          <div className="overflow-hidden rounded-xl border border-white/10">
-            <p className="bg-zinc-900/80 px-3 py-2 text-xs text-zinc-500">Pré-visualização</p>
+          <div className="overflow-hidden rounded-xl ev-border-subtle border">
+            <p className="ev-surface-soft px-3 py-2 text-xs ev-text-muted">Pré-visualização</p>
             <div className="ev-gradient-welcome px-6 py-8 text-center">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl ev-bg-primary-soft p-2">
                 <EventLogo event={previewEvent} className="max-h-full max-w-full text-3xl" />
               </div>
               <p className="text-xs uppercase tracking-widest ev-text-accent">{event.name}</p>
+              <h3 className="mt-2 text-xl font-bold ev-text">{event.name}</h3>
               <button
                 type="button"
-                className="mt-4 rounded-xl px-6 py-2 text-sm font-semibold text-white ev-bg-primary ev-bg-primary-hover"
+                className="mt-4 rounded-xl px-6 py-2 text-sm font-semibold ev-bg-primary ev-bg-primary-hover"
               >
                 Participar
               </button>
@@ -176,10 +190,17 @@ export function EventBrandingForm({ event, onUpdated }: EventBrandingFormProps) 
           </button>
           <button
             type="button"
+            onClick={applyLightInvitePreset}
+            className="rounded-xl border border-emerald-500/40 px-4 py-2.5 text-sm text-emerald-300 hover:bg-emerald-500/10"
+          >
+            Estilo convite claro
+          </button>
+          <button
+            type="button"
             onClick={resetColors}
             className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-zinc-400 hover:text-white"
           >
-            Restaurar cores padrão
+            Restaurar tema escuro
           </button>
         </div>
       </form>

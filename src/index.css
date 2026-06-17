@@ -17,44 +17,98 @@ body {
 
 /* Tema personalizado por evento (CSS vars definidas em EventThemeProvider) */
 .event-theme {
+  --ev-background: #09090b;
+  --ev-text: #ffffff;
+  --ev-text-muted: #a1a1aa;
   --ev-primary: #d946ef;
   --ev-accent: #e879f9;
   --ev-gradient-start: #701a75;
   --ev-gradient-end: #312e81;
+  background-color: var(--ev-background);
+  color: var(--ev-text);
+}
+
+.ev-bg-page {
+  background-color: var(--ev-background);
 }
 
 .ev-gradient-page {
   background: linear-gradient(
     to bottom right,
-    color-mix(in srgb, var(--ev-gradient-start) 100%, transparent),
-    #09090b,
-    var(--ev-gradient-end)
+    color-mix(in srgb, var(--ev-gradient-start) 50%, var(--ev-background)),
+    var(--ev-background),
+    color-mix(in srgb, var(--ev-gradient-end) 40%, var(--ev-background))
   );
 }
 
 .ev-gradient-welcome {
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--ev-gradient-start) 40%, transparent),
-    #09090b,
-    #09090b
+    color-mix(in srgb, var(--ev-gradient-start) 80%, var(--ev-background)),
+    var(--ev-background),
+    var(--ev-background)
   );
+}
+
+.ev-text {
+  color: var(--ev-text);
+}
+
+.ev-text-muted {
+  color: var(--ev-text-muted);
+}
+
+.ev-surface {
+  background-color: color-mix(in srgb, var(--ev-text) 5%, var(--ev-background));
+  border: 1px solid color-mix(in srgb, var(--ev-text) 10%, transparent);
+}
+
+.ev-surface-soft {
+  background-color: color-mix(in srgb, var(--ev-text) 3%, var(--ev-background));
+}
+
+.ev-input {
+  background-color: color-mix(in srgb, var(--ev-text) 4%, var(--ev-background));
+  border: 1px solid color-mix(in srgb, var(--ev-text) 14%, transparent);
+  color: var(--ev-text);
+}
+
+.ev-input::placeholder {
+  color: var(--ev-text-muted);
+}
+
+.ev-header-bar {
+  background-color: color-mix(in srgb, var(--ev-background) 88%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ev-text) 10%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.ev-btn-ghost {
+  border: 1px solid color-mix(in srgb, var(--ev-text) 14%, transparent);
+  color: var(--ev-text-muted);
+}
+
+.ev-btn-ghost:hover {
+  color: var(--ev-text);
+  border-color: color-mix(in srgb, var(--ev-text) 22%, transparent);
 }
 
 .ev-bg-primary {
   background-color: var(--ev-primary);
+  color: #ffffff;
 }
 
 .ev-bg-primary-soft {
-  background-color: color-mix(in srgb, var(--ev-primary) 20%, transparent);
+  background-color: color-mix(in srgb, var(--ev-primary) 18%, var(--ev-background));
 }
 
 .ev-bg-primary-hover:hover {
   background-color: var(--ev-accent);
+  color: #ffffff;
 }
 
 .ev-text-accent {
-  color: color-mix(in srgb, var(--ev-accent) 80%, transparent);
+  color: color-mix(in srgb, var(--ev-accent) 85%, var(--ev-text));
 }
 
 .ev-text-accent-strong {
@@ -62,29 +116,53 @@ body {
 }
 
 .ev-border-accent {
-  border-color: color-mix(in srgb, var(--ev-accent) 60%, transparent);
+  border-color: color-mix(in srgb, var(--ev-accent) 55%, transparent);
 }
 
 .ev-border-accent-soft {
-  border-color: color-mix(in srgb, var(--ev-primary) 30%, transparent);
+  border-color: color-mix(in srgb, var(--ev-primary) 28%, transparent);
+}
+
+.ev-border-subtle {
+  border-color: color-mix(in srgb, var(--ev-text) 10%, transparent);
 }
 
 .ev-shadow-primary {
-  box-shadow: 0 10px 25px color-mix(in srgb, var(--ev-primary) 25%, transparent);
+  box-shadow: 0 10px 25px color-mix(in srgb, var(--ev-primary) 22%, transparent);
 }
 
 .ev-focus:focus {
   border-color: var(--ev-accent);
   outline: none;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ev-accent) 40%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ev-accent) 35%, transparent);
 }
 
 .ev-view-active {
   background-color: var(--ev-primary);
-  color: white;
+  color: #ffffff;
+}
+
+.ev-view-inactive {
+  color: var(--ev-text-muted);
+}
+
+.ev-view-inactive:hover {
+  color: var(--ev-text);
 }
 
 .hover\:ev-border-accent:hover {
-  border-color: color-mix(in srgb, var(--ev-accent) 60%, transparent);
+  border-color: color-mix(in srgb, var(--ev-accent) 55%, transparent);
 }
 
+.ev-sticky-bar {
+  background-color: color-mix(in srgb, var(--ev-background) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.ev-link-muted {
+  color: var(--ev-text-muted);
+}
+
+.ev-link-muted:hover {
+  color: var(--ev-text);
+}

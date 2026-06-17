@@ -40,7 +40,6 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
     if (!user || busyLike) return
     setBusyLike(true)
     const wasLiked = liked
-    // Otimista
     setLikes((prev) =>
       wasLiked ? prev.filter((l) => l.user_id !== user.id) : [...prev, { user_id: user.id }],
     )
@@ -59,7 +58,6 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
         if (error) throw error
       }
     } catch {
-      // Reverte em caso de erro
       setLikes((prev) =>
         wasLiked ? [...prev, { user_id: user.id }] : prev.filter((l) => l.user_id !== user.id),
       )
@@ -102,24 +100,24 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
   }
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+    <article className="ev-surface overflow-hidden rounded-2xl">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold uppercase ev-bg-primary-soft ev-text-accent-strong">
             {photo.user?.username?.[0] ?? '?'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">
+            <p className="text-sm font-semibold ev-text">
               {photo.user?.username ?? 'anônimo'}
             </p>
-            <p className="text-xs text-zinc-500">{timeAgo(photo.created_at)}</p>
+            <p className="text-xs ev-text-muted">{timeAgo(photo.created_at)}</p>
           </div>
         </div>
         {isOwner && (
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="rounded-lg px-2 py-1 text-sm text-zinc-400 transition hover:text-red-400 disabled:opacity-50"
+            className="ev-btn-ghost rounded-lg px-2 py-1 text-sm transition hover:text-red-500 disabled:opacity-50"
             aria-label="Apagar foto"
           >
             {deleting ? '…' : '🗑️'}
@@ -152,31 +150,28 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
           <button
             onClick={toggleLike}
             disabled={busyLike}
-            className="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-50"
+            className="flex items-center gap-1.5 text-sm font-medium transition disabled:opacity-50 ev-text"
           >
             <span className="text-xl">{liked ? '❤️' : '🤍'}</span>
-            <span className="text-zinc-300">{likes.length}</span>
+            <span>{likes.length}</span>
           </button>
-          <span className="flex items-center gap-1.5 text-sm text-zinc-400">
+          <span className="flex items-center gap-1.5 text-sm ev-text-muted">
             <span className="text-lg">💬</span>
             {comments.length}
           </span>
         </div>
 
         {photo.caption && (
-          <p className="mt-2 text-sm text-zinc-200">
-            <span className="font-semibold text-white">{photo.user?.username}</span>{' '}
-            {photo.caption}
+          <p className="mt-2 text-sm ev-text">
+            <span className="font-semibold">{photo.user?.username}</span> {photo.caption}
           </p>
         )}
 
         {comments.length > 0 && (
           <ul className="mt-3 space-y-1.5">
             {comments.map((c) => (
-              <li key={c.id} className="text-sm text-zinc-300">
-                <span className="font-semibold text-white">
-                  {c.user?.username ?? 'anônimo'}
-                </span>{' '}
+              <li key={c.id} className="text-sm ev-text-muted">
+                <span className="font-semibold ev-text">{c.user?.username ?? 'anônimo'}</span>{' '}
                 {c.text}
               </li>
             ))}
@@ -190,12 +185,12 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Comentar…"
             maxLength={280}
-            className="ev-focus flex-1 rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none"
+            className="ev-input ev-focus flex-1 rounded-lg px-3 py-2 text-sm outline-none"
           />
           <button
             type="submit"
             disabled={!commentText.trim()}
-            className="rounded-lg px-3 py-2 text-sm font-semibold text-white transition disabled:opacity-40 ev-bg-primary ev-bg-primary-hover"
+            className="rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-40 ev-bg-primary ev-bg-primary-hover"
           >
             Enviar
           </button>

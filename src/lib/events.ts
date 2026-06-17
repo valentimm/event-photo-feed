@@ -115,6 +115,9 @@ export async function fetchEventMediaExport(eventId: string): Promise<EventMedia
 export async function updateEventBranding(
   eventId: string,
   input: {
+    color_background: string
+    color_text: string
+    color_text_muted: string
     color_primary: string
     color_accent: string
     color_gradient_start: string
@@ -123,6 +126,12 @@ export async function updateEventBranding(
   },
 ): Promise<Event> {
   const payload = {
+    color_background: normalizeHexColor(input.color_background, DEFAULT_EVENT_THEME.color_background),
+    color_text: normalizeHexColor(input.color_text, DEFAULT_EVENT_THEME.color_text),
+    color_text_muted: normalizeHexColor(
+      input.color_text_muted,
+      DEFAULT_EVENT_THEME.color_text_muted,
+    ),
     color_primary: normalizeHexColor(input.color_primary, DEFAULT_EVENT_THEME.color_primary),
     color_accent: normalizeHexColor(input.color_accent, DEFAULT_EVENT_THEME.color_accent),
     color_gradient_start: normalizeHexColor(

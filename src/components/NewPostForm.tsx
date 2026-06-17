@@ -187,7 +187,7 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div className="ev-surface rounded-2xl p-4">
       {media ? (
         <div className="space-y-3">
           {media.mediaType === 'video' ? (
@@ -210,21 +210,21 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
             onChange={(e) => setCaption(e.target.value)}
             placeholder="Escreva uma legenda (opcional)"
             maxLength={280}
-            className="ev-focus w-full rounded-xl border border-white/10 bg-zinc-900/80 px-4 py-2.5 text-white placeholder-zinc-500 outline-none"
+            className="ev-input ev-focus w-full rounded-xl px-4 py-2.5 outline-none"
           />
           {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="flex gap-2">
             <button
               onClick={handlePost}
               disabled={uploading}
-              className="flex-1 rounded-xl px-4 py-2.5 font-semibold text-white transition disabled:opacity-50 ev-bg-primary ev-bg-primary-hover"
+              className="flex-1 rounded-xl px-4 py-2.5 font-semibold transition disabled:opacity-50 ev-bg-primary ev-bg-primary-hover"
             >
               {uploading ? 'Enviando…' : 'Postar'}
             </button>
             <button
               onClick={reset}
               disabled={uploading}
-              className="rounded-xl border border-white/10 px-4 py-2.5 text-zinc-300 transition hover:text-white disabled:opacity-50"
+              className="ev-btn-ghost rounded-xl px-4 py-2.5 transition disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -237,14 +237,14 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
               <>
                 <button
                   onClick={() => pickNativePhoto(CameraSource.Camera)}
-                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
+                  className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
                 >
                   <span className="text-2xl">📷</span>
                   <span className="text-sm font-medium">Câmera</span>
                 </button>
                 <button
                   onClick={() => pickNativePhoto(CameraSource.Photos)}
-                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
+                  className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
                 >
                   <span className="text-2xl">🖼️</span>
                   <span className="text-sm font-medium">Galeria</span>
@@ -253,7 +253,7 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
             ) : (
               <button
                 onClick={() => photoInputRef.current?.click()}
-                className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
+                className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
               >
                 <span className="text-2xl">📷</span>
                 <span className="text-sm font-medium">Foto</span>
@@ -261,13 +261,13 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
             )}
             <button
               onClick={() => videoInputRef.current?.click()}
-              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
+              className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
             >
               <span className="text-2xl">🎥</span>
               <span className="text-sm font-medium">Vídeo</span>
             </button>
           </div>
-          <p className="text-center text-xs text-zinc-500">
+          <p className="text-center text-xs ev-text-muted">
             Vídeo de até {MAX_VIDEO_SECONDS} segundos.
           </p>
           {error && <p className="text-center text-sm text-red-400">{error}</p>}
