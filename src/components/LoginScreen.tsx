@@ -1,7 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../lib/auth'
+import type { Event } from '../lib/types'
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  event: Event
+  onBack?: () => void
+}
+
+export function LoginScreen({ event, onBack }: LoginScreenProps) {
   const { login, loading } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -11,14 +17,22 @@ export function LoginScreen() {
     e.preventDefault()
     setError(null)
     try {
-      await login(username, password)
+      await login(username, password, event.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível entrar.')
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-fuchsia-950 via-zinc-950 to-indigo-950 p-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-fuchsia-950 via-zinc-950 to-indigo-950 p-4">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute left-4 top-4 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-zinc-400 hover:text-white"
+        >
+          ← Voltar
+        </button>
+      )}
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur"
@@ -27,9 +41,10 @@ export function LoginScreen() {
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-fuchsia-500/20 text-3xl">
             📸
           </div>
-          <h1 className="text-2xl font-bold text-white">Feed do Evento</h1>
+          <h1 className="text-2xl font-bold text-white">{event.name}</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Entre com nome e sobrenome + uma senha para postar e ver as fotos.
+            Entre com nome e sobrenome + senha para postar e ver as fotos deste
+            evento.
           </p>
         </div>
 
@@ -72,7 +87,7 @@ export function LoginScreen() {
           disabled={loading || !username.trim() || !password}
           className="mt-5 w-full rounded-xl bg-fuchsia-500 px-4 py-3 font-semibold text-white transition hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? 'Entrando…' : 'Entrar'}
+          {loading ? 'Entrando…' : 'Entrar no evento'}
         </button>
         <p className="mt-3 text-center text-xs text-zinc-500">
           Use nome e sobrenome. Nome novo cria a conta; nome existente exige a senha

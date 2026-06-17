@@ -1,22 +1,33 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { groupPhotosByDay } from '../lib/format'
 import type { Photo } from '../lib/types'
+import { MediaLightbox } from './MediaLightbox'
 import { NewPostForm } from './NewPostForm'
 import { PhotoCard } from './PhotoCard'
 
 const PHOTO_QUERY =
   '*, user:users(id, username), likes(user_id), comments(*, user:users(id, username))'
 
-export function Feed() {
+type ViewMode = 'feed' | 'grid' | 'timeline'
+
+interface FeedProps {
+  eventId: string
+}
+
+export function Feed({ eventId }: FeedProps) {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<ViewMode>('feed')
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   const loadPhotos = useCallback(async () => {
     setError(null)
     const { data, error: queryError } = await supabase
       .from('photos')
       .select(PHOTO_QUERY)
+      .eq('event_id', eventId)
       .order('created_at', { ascending: false })
 
     if (queryError) {
@@ -25,21 +36,71 @@ export function Feed() {
       setPhotos((data as Photo[]) ?? [])
     }
     setLoading(false)
-  }, [])
+  }, [eventId])
 
   useEffect(() => {
     void loadPhotos()
   }, [loadPhotos])
 
+  // Atualização em tempo real (estilo Dots — feed vivo durante o evento)
+  useEffect(() => {
+    const channel = supabase
+      .channel(`event-photos-${eventId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'photos', filter: `event_id=eq.${eventId}` },
+        () => {
+          void loadPhotos()
+        },
+      )
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [eventId, loadPhotos])
+
   const handleDeleted = useCallback((photoId: string) => {
     setPhotos((prev) => prev.filter((p) => p.id !== photoId))
+    setLightboxIndex(null)
   }, [])
+
+  const openLightbox = useCallback((photoId: string) => {
+    const idx = photos.findIndex((p) => p.id === photoId)
+    if (idx >= 0) setLightboxIndex(idx)
+  }, [photos])
+
+  const timelineGroups = groupPhotosByDay(photos)
 
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 py-5">
-      <NewPostForm onPosted={loadPhotos} />
+      <NewPostForm eventId={eventId} onPosted={loadPhotos} />
 
-      {loading && <p className="py-10 text-center text-zinc-500">Carregando feed…</p>}
+      {!loading && photos.length > 0 && (
+        <div className="flex rounded-xl border border-white/10 bg-white/5 p-1">
+          {(
+            [
+              { id: 'feed' as const, label: 'Feed', icon: '📋' },
+              { id: 'grid' as const, label: 'Galeria', icon: '🖼️' },
+              { id: 'timeline' as const, label: 'Linha do tempo', icon: '📅' },
+            ] as const
+          ).map((mode) => (
+            <button
+              key={mode.id}
+              onClick={() => setView(mode.id)}
+              className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-medium transition sm:text-sm ${
+                view === mode.id
+                  ? 'bg-fuchsia-500 text-white'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <span>{mode.icon}</span>
+              <span className="hidden sm:inline">{mode.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {loading && <p className="py-10 text-center text-zinc-500">Carregando memórias…</p>}
 
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
@@ -48,14 +109,78 @@ export function Feed() {
       )}
 
       {!loading && !error && photos.length === 0 && (
-        <p className="py-10 text-center text-zinc-500">
-          Nenhuma foto ainda. Seja o primeiro a postar! 🎉
-        </p>
+        <div className="py-12 text-center">
+          <p className="text-4xl">📷</p>
+          <p className="mt-3 text-zinc-400">Nenhuma memória ainda.</p>
+          <p className="mt-1 text-sm text-zinc-500">Seja o primeiro a compartilhar!</p>
+        </div>
       )}
 
-      {photos.map((photo) => (
-        <PhotoCard key={photo.id} photo={photo} onDeleted={handleDeleted} />
-      ))}
+      {view === 'feed' &&
+        photos.map((photo) => (
+          <PhotoCard
+            key={photo.id}
+            photo={photo}
+            onDeleted={handleDeleted}
+            onMediaClick={() => openLightbox(photo.id)}
+          />
+        ))}
+
+      {view === 'grid' && photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-1 sm:grid-cols-4">
+          {photos.map((photo) => (
+            <button
+              key={photo.id}
+              onClick={() => openLightbox(photo.id)}
+              className="relative aspect-square overflow-hidden rounded-lg bg-zinc-900"
+            >
+              {photo.media_type === 'video' ? (
+                <>
+                  <video src={photo.image_url} className="h-full w-full object-cover" muted />
+                  <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 text-xs">
+                    ▶
+                  </span>
+                </>
+              ) : (
+                <img
+                  src={photo.image_url}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === 'timeline' &&
+        timelineGroups.map((group) => (
+          <section key={group.label}>
+            <div className="sticky top-[57px] z-[5] mb-3 border-b border-fuchsia-500/30 bg-zinc-950/90 py-2 backdrop-blur">
+              <h3 className="text-sm font-semibold capitalize text-fuchsia-300">{group.label}</h3>
+            </div>
+            <div className="space-y-4">
+              {group.items.map((photo) => (
+                <PhotoCard
+                  key={photo.id}
+                  photo={photo}
+                  onDeleted={handleDeleted}
+                  onMediaClick={() => openLightbox(photo.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+
+      {lightboxIndex !== null && (
+        <MediaLightbox
+          photos={photos}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </main>
   )
 }

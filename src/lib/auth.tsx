@@ -9,13 +9,14 @@ import {
 } from 'react'
 import { supabase } from './supabase'
 import type { User } from './types'
+import { joinEvent } from './events'
 
 const STORAGE_KEY = 'event-photo-feed:user'
 
 interface AuthContextValue {
   user: User | null
   loading: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string, eventId?: string) => Promise<void>
   logout: () => void
 }
 
@@ -122,10 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string, eventId?: string) => {
     setLoading(true)
     try {
       const u = await loginOrRegister(username, password)
+      if (eventId) await joinEvent(eventId, u.id)
       setUser(u)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u))
     } finally {

@@ -6,6 +6,7 @@ import type { Comment, Photo } from '../lib/types'
 interface PhotoCardProps {
   photo: Photo
   onDeleted: (photoId: string) => void
+  onMediaClick?: () => void
 }
 
 function timeAgo(iso: string): string {
@@ -19,7 +20,7 @@ function timeAgo(iso: string): string {
   return `${d} d`
 }
 
-export function PhotoCard({ photo, onDeleted }: PhotoCardProps) {
+export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
   const { user } = useAuth()
 
   const [likes, setLikes] = useState(photo.likes)
@@ -132,15 +133,18 @@ export function PhotoCard({ photo, onDeleted }: PhotoCardProps) {
           controls
           playsInline
           preload="metadata"
-          className="w-full bg-black"
+          className="w-full cursor-pointer bg-black"
+          onClick={onMediaClick}
         />
       ) : (
-        <img
-          src={photo.image_url}
-          alt={photo.caption ?? 'Foto do evento'}
-          loading="lazy"
-          className="w-full bg-black object-cover"
-        />
+        <button type="button" onClick={onMediaClick} className="block w-full">
+          <img
+            src={photo.image_url}
+            alt={photo.caption ?? 'Foto do evento'}
+            loading="lazy"
+            className="w-full bg-black object-cover"
+          />
+        </button>
       )}
 
       <div className="px-4 py-3">

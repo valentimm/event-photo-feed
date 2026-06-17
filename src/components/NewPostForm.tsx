@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth'
 import type { MediaType } from '../lib/types'
 
 interface NewPostFormProps {
+  eventId: string
   onPosted: () => void
 }
 
@@ -45,7 +46,7 @@ function getVideoDuration(url: string): Promise<number> {
   })
 }
 
-export function NewPostForm({ onPosted }: NewPostFormProps) {
+export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
   const { user } = useAuth()
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -148,7 +149,7 @@ export function NewPostForm({ onPosted }: NewPostFormProps) {
     setUploading(true)
     setError(null)
     try {
-      const path = `${user.id}/${crypto.randomUUID()}.${media.ext}`
+      const path = `${eventId}/${user.id}/${crypto.randomUUID()}.${media.ext}`
 
       const { error: uploadError } = await supabase.storage
         .from(PHOTOS_BUCKET)
@@ -164,6 +165,7 @@ export function NewPostForm({ onPosted }: NewPostFormProps) {
       } = supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(path)
 
       const { error: insertError } = await supabase.from('photos').insert({
+        event_id: eventId,
         user_id: user.id,
         image_url: publicUrl,
         image_path: path,
