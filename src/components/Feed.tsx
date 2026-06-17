@@ -88,9 +88,7 @@ export function Feed({ eventId }: FeedProps) {
               key={mode.id}
               onClick={() => setView(mode.id)}
               className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-xs font-medium transition sm:text-sm ${
-                view === mode.id
-                  ? 'bg-fuchsia-500 text-white'
-                  : 'text-zinc-400 hover:text-white'
+                view === mode.id ? 'ev-view-active' : 'text-zinc-400 hover:text-white'
               }`}
             >
               <span>{mode.icon}</span>
@@ -157,8 +155,8 @@ export function Feed({ eventId }: FeedProps) {
       {view === 'timeline' &&
         timelineGroups.map((group) => (
           <section key={group.label}>
-            <div className="sticky top-[57px] z-[5] mb-3 border-b border-fuchsia-500/30 bg-zinc-950/90 py-2 backdrop-blur">
-              <h3 className="text-sm font-semibold capitalize text-fuchsia-300">{group.label}</h3>
+            <div className="sticky top-[57px] z-[5] mb-3 border-b ev-border-accent-soft bg-zinc-950/90 py-2 backdrop-blur">
+              <h3 className="text-sm font-semibold capitalize ev-text-accent-strong">{group.label}</h3>
             </div>
             <div className="space-y-4">
               {group.items.map((photo) => (

@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+import { PHOTOS_BUCKET, supabase } from './supabase'
+import { DEFAULT_EVENT_THEME, normalizeHexColor } from './eventTheme'
 import type { Event, EventStats, EventUserRow, EventWithStats } from './types'
 
 export async function fetchEvent(eventId: string): Promise<Event | null> {
@@ -109,6 +110,64 @@ export async function fetchEventMediaExport(eventId: string): Promise<EventMedia
       username: user?.username ?? '—',
     }
   })
+}
+
+export async function updateEventBranding(
+  eventId: string,
+  input: {
+    color_primary: string
+    color_accent: string
+    color_gradient_start: string
+    color_gradient_end: string
+    logo_url?: string | null
+  },
+): Promise<Event> {
+  const payload = {
+    color_primary: normalizeHexColor(input.color_primary, DEFAULT_EVENT_THEME.color_primary),
+    color_accent: normalizeHexColor(input.color_accent, DEFAULT_EVENT_THEME.color_accent),
+    color_gradient_start: normalizeHexColor(
+      input.color_gradient_start,
+      DEFAULT_EVENT_THEME.color_gradient_start,
+    ),
+    color_gradient_end: normalizeHexColor(
+      input.color_gradient_end,
+      DEFAULT_EVENT_THEME.color_gradient_end,
+    ),
+    ...(input.logo_url !== undefined ? { logo_url: input.logo_url } : {}),
+  }
+  const { data, error } = await supabase
+    .from('events')
+    .update(payload)
+    .eq('id', eventId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Event
+}
+
+export async function uploadEventLogo(eventId: string, file: File): Promise<string> {
+  const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : 'png'
+  const path = `logos/${eventId}/logo.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from(PHOTOS_BUCKET)
+    .upload(path, file, {
+      cacheControl: '3600',
+      contentType: file.type || `image/${ext}`,
+      upsert: true,
+    })
+  if (uploadError) throw uploadError
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(path)
+
+  const { error } = await supabase
+    .from('events')
+    .update({ logo_url: publicUrl })
+    .eq('id', eventId)
+  if (error) throw error
+  return publicUrl
 }
 
 export async function setEventActive(eventId: string, isActive: boolean): Promise<void> {

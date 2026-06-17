@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { fetchEvent, fetchEventStats, joinEvent } from '../lib/events'
 import type { Event, EventStats } from '../lib/types'
+import { EventThemeProvider } from '../components/EventThemeProvider'
 import { EventWelcome } from '../components/EventWelcome'
 import { Header } from '../components/Header'
 import { Feed } from '../components/Feed'
@@ -46,7 +47,6 @@ export function EventPage() {
     }
   }, [eventId])
 
-  // Refresh stats periodically while on event page
   useEffect(() => {
     if (!eventId || !user) return
     const interval = setInterval(() => {
@@ -92,20 +92,22 @@ export function EventPage() {
     )
   }
 
-  // Fluxo Dots: QR → welcome → login → feed
   if (!user) {
-    if (!showLogin && stats) {
-      return <EventWelcome event={event} stats={stats} onJoin={() => setShowLogin(true)} />
-    }
     return (
-      <LoginScreen event={event} onBack={stats ? () => setShowLogin(false) : undefined} />
+      <EventThemeProvider event={event} className="min-h-screen">
+        {!showLogin && stats ? (
+          <EventWelcome event={event} stats={stats} onJoin={() => setShowLogin(true)} />
+        ) : (
+          <LoginScreen event={event} onBack={stats ? () => setShowLogin(false) : undefined} />
+        )}
+      </EventThemeProvider>
     )
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <Header eventId={event.id} eventName={event.name} stats={stats ?? undefined} />
+    <EventThemeProvider event={event} className="min-h-screen bg-zinc-950 text-white">
+      <Header event={event} stats={stats ?? undefined} />
       <Feed eventId={event.id} />
-    </div>
+    </EventThemeProvider>
   )
 }

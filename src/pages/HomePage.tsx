@@ -9,8 +9,7 @@ export function HomePage() {
         </div>
         <h1 className="text-4xl font-bold text-white">Feed do Evento</h1>
         <p className="mt-4 max-w-md text-lg text-zinc-400">
-          Um álbum colaborativo para casamentos, festas e celebrações — como o Dots
-          Memories, direto no navegador.
+          Um álbum colaborativo para casamentos, festas e celebrações 
         </p>
 
         <div className="mt-10 grid max-w-sm gap-4 text-left text-sm text-zinc-400">

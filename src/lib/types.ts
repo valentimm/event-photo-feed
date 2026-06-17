@@ -10,6 +10,11 @@ export interface Event {
   event_type: string
   event_date: string | null
   description: string | null
+  color_primary: string
+  color_accent: string
+  color_gradient_start: string
+  color_gradient_end: string
+  logo_url: string | null
   is_active: boolean
   created_at: string
 }

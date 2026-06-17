@@ -12,6 +12,11 @@ create table if not exists public.events (
   event_type  text not null default 'other',
   event_date  date,
   description text,
+  color_primary text not null default '#d946ef',
+  color_accent text not null default '#e879f9',
+  color_gradient_start text not null default '#701a75',
+  color_gradient_end text not null default '#312e81',
+  logo_url text,
   is_active   boolean not null default true,
   created_at  timestamptz not null default now()
 );

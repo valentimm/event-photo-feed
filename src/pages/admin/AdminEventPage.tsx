@@ -13,6 +13,7 @@ import type { Event, EventStats, EventUserRow } from '../../lib/types'
 import { getEventTypeInfo } from '../../lib/eventTypes'
 import { formatEventDate } from '../../lib/format'
 import { QrCodeCard } from '../../components/QrCodeCard'
+import { EventBrandingForm } from '../../components/EventBrandingForm'
 
 export function AdminEventPage() {
   const { eventId } = useParams<{ eventId: string }>()
@@ -161,6 +162,8 @@ export function AdminEventPage() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+        <EventBrandingForm event={event} onUpdated={setEvent} />
+
         <QrCodeCard url={joinUrl} />
 
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">

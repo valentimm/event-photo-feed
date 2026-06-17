@@ -2,6 +2,7 @@ import { getEventJoinUrl } from '../lib/appUrl'
 import { getEventTypeInfo } from '../lib/eventTypes'
 import { formatEventDate } from '../lib/format'
 import type { Event, EventStats } from '../lib/types'
+import { EventLogo } from './EventLogo'
 
 interface EventWelcomeProps {
   event: Event
@@ -15,13 +16,13 @@ export function EventWelcome({ event, stats, onJoin }: EventWelcomeProps) {
   const totalMedia = stats.photos + stats.videos
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-fuchsia-950/40 via-zinc-950 to-zinc-950">
+    <div className="flex min-h-screen flex-col ev-gradient-welcome">
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-fuchsia-500/20 text-5xl shadow-lg">
-          {typeInfo.emoji}
+        <div className="mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl ev-bg-primary-soft p-3 shadow-lg">
+          <EventLogo event={event} className="max-h-full max-w-full text-5xl" fallbackEmoji={typeInfo.emoji} />
         </div>
 
-        <p className="text-sm font-medium uppercase tracking-widest text-fuchsia-400/80">
+        <p className="text-sm font-medium uppercase tracking-widest ev-text-accent">
           {typeInfo.label}
         </p>
         <h1 className="mt-2 max-w-md text-3xl font-bold text-white">{event.name}</h1>
@@ -47,7 +48,7 @@ export function EventWelcome({ event, stats, onJoin }: EventWelcomeProps) {
         <div className="mt-10 w-full max-w-sm space-y-3">
           <button
             onClick={onJoin}
-            className="w-full rounded-2xl bg-fuchsia-500 px-6 py-4 text-lg font-bold text-white shadow-lg shadow-fuchsia-500/25 transition hover:bg-fuchsia-400"
+            className="w-full rounded-2xl px-6 py-4 text-lg font-bold text-white transition ev-bg-primary ev-bg-primary-hover ev-shadow-primary"
           >
             Participar do evento
           </button>

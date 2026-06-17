@@ -105,7 +105,7 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
     <article className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-fuchsia-500/20 text-sm font-bold uppercase text-fuchsia-300">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold uppercase ev-bg-primary-soft ev-text-accent-strong">
             {photo.user?.username?.[0] ?? '?'}
           </div>
           <div>
@@ -190,12 +190,12 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Comentar…"
             maxLength={280}
-            className="flex-1 rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-fuchsia-400"
+            className="ev-focus flex-1 rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none"
           />
           <button
             type="submit"
             disabled={!commentText.trim()}
-            className="rounded-lg bg-fuchsia-500/90 px-3 py-2 text-sm font-semibold text-white transition hover:bg-fuchsia-400 disabled:opacity-40"
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-white transition disabled:opacity-40 ev-bg-primary ev-bg-primary-hover"
           >
             Enviar
           </button>

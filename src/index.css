@@ -14,3 +14,77 @@ body {
   margin: 0;
   background-color: #0b0b0f;
 }
+
+/* Tema personalizado por evento (CSS vars definidas em EventThemeProvider) */
+.event-theme {
+  --ev-primary: #d946ef;
+  --ev-accent: #e879f9;
+  --ev-gradient-start: #701a75;
+  --ev-gradient-end: #312e81;
+}
+
+.ev-gradient-page {
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--ev-gradient-start) 100%, transparent),
+    #09090b,
+    var(--ev-gradient-end)
+  );
+}
+
+.ev-gradient-welcome {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ev-gradient-start) 40%, transparent),
+    #09090b,
+    #09090b
+  );
+}
+
+.ev-bg-primary {
+  background-color: var(--ev-primary);
+}
+
+.ev-bg-primary-soft {
+  background-color: color-mix(in srgb, var(--ev-primary) 20%, transparent);
+}
+
+.ev-bg-primary-hover:hover {
+  background-color: var(--ev-accent);
+}
+
+.ev-text-accent {
+  color: color-mix(in srgb, var(--ev-accent) 80%, transparent);
+}
+
+.ev-text-accent-strong {
+  color: var(--ev-accent);
+}
+
+.ev-border-accent {
+  border-color: color-mix(in srgb, var(--ev-accent) 60%, transparent);
+}
+
+.ev-border-accent-soft {
+  border-color: color-mix(in srgb, var(--ev-primary) 30%, transparent);
+}
+
+.ev-shadow-primary {
+  box-shadow: 0 10px 25px color-mix(in srgb, var(--ev-primary) 25%, transparent);
+}
+
+.ev-focus:focus {
+  border-color: var(--ev-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ev-accent) 40%, transparent);
+}
+
+.ev-view-active {
+  background-color: var(--ev-primary);
+  color: white;
+}
+
+.hover\:ev-border-accent:hover {
+  border-color: color-mix(in srgb, var(--ev-accent) 60%, transparent);
+}
+

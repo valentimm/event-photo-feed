@@ -210,14 +210,14 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
             onChange={(e) => setCaption(e.target.value)}
             placeholder="Escreva uma legenda (opcional)"
             maxLength={280}
-            className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-4 py-2.5 text-white placeholder-zinc-500 outline-none focus:border-fuchsia-400"
+            className="ev-focus w-full rounded-xl border border-white/10 bg-zinc-900/80 px-4 py-2.5 text-white placeholder-zinc-500 outline-none"
           />
           {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="flex gap-2">
             <button
               onClick={handlePost}
               disabled={uploading}
-              className="flex-1 rounded-xl bg-fuchsia-500 px-4 py-2.5 font-semibold text-white transition hover:bg-fuchsia-400 disabled:opacity-50"
+              className="flex-1 rounded-xl px-4 py-2.5 font-semibold text-white transition disabled:opacity-50 ev-bg-primary ev-bg-primary-hover"
             >
               {uploading ? 'Enviando…' : 'Postar'}
             </button>
@@ -237,14 +237,14 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
               <>
                 <button
                   onClick={() => pickNativePhoto(CameraSource.Camera)}
-                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
                 >
                   <span className="text-2xl">📷</span>
                   <span className="text-sm font-medium">Câmera</span>
                 </button>
                 <button
                   onClick={() => pickNativePhoto(CameraSource.Photos)}
-                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+                  className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
                 >
                   <span className="text-2xl">🖼️</span>
                   <span className="text-sm font-medium">Galeria</span>
@@ -253,7 +253,7 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
             ) : (
               <button
                 onClick={() => photoInputRef.current?.click()}
-                className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+                className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
               >
                 <span className="text-2xl">📷</span>
                 <span className="text-sm font-medium">Foto</span>
@@ -261,7 +261,7 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
             )}
             <button
               onClick={() => videoInputRef.current?.click()}
-              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:border-fuchsia-400/60 hover:text-white"
+              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/15 px-3 py-5 text-zinc-300 transition hover:ev-border-accent hover:text-white"
             >
               <span className="text-2xl">🎥</span>
               <span className="text-sm font-medium">Vídeo</span>
