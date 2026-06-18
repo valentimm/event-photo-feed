@@ -1,3 +1,4 @@
+import JSZip from 'jszip'
 import type { Photo } from './types'
 
 export function formatEventDate(date: string | null | undefined): string | null {
@@ -76,7 +77,36 @@ export interface MediaDownloadItem {
   username: string
 }
 
-/** Baixa cada mídia como arquivo (foto/vídeo), com pequeno intervalo entre downloads. */
+/** Baixa todas as mídias em um único arquivo .zip. */
+export async function downloadAllMediaAsZip(
+  items: MediaDownloadItem[],
+  zipBaseName: string,
+  onProgress?: (current: number, total: number) => void,
+): Promise<void> {
+  const zip = new JSZip()
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    const res = await fetch(item.url)
+    if (!res.ok) throw new Error(`Falha ao baixar: ${item.url}`)
+    const blob = await res.blob()
+    const ext = extFromUrl(item.url, item.media_type)
+    const date = item.created_at.slice(0, 10)
+    const filename = `${safeFilenamePart(item.username)}-${date}-${String(i + 1).padStart(3, '0')}.${ext}`
+    zip.file(filename, blob)
+    onProgress?.(i + 1, items.length)
+  }
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' })
+  const objectUrl = URL.createObjectURL(zipBlob)
+  const a = document.createElement('a')
+  a.href = objectUrl
+  a.download = `${safeFilenamePart(zipBaseName)}-midias.zip`
+  a.click()
+  URL.revokeObjectURL(objectUrl)
+}
+
+/** @deprecated Use downloadAllMediaAsZip */
 export async function downloadAllMedia(
   items: MediaDownloadItem[],
   onProgress?: (current: number, total: number) => void,

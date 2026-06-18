@@ -59,10 +59,13 @@ create table if not exists public.event_memberships (
 
 create table if not exists public.users (
   id          uuid primary key default gen_random_uuid(),
-  username    text not null unique,
+  username    text not null,
+  username_key text not null,
   password    text not null default '',
   created_at  timestamptz not null default now()
 );
+
+create unique index if not exists users_username_key_unique on public.users (username_key);
 
 create table if not exists public.photos (
   id          uuid primary key default gen_random_uuid(),

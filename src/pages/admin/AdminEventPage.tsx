@@ -11,7 +11,7 @@ import {
 } from '../../lib/events'
 import type { Event, EventStats, EventUserRow } from '../../lib/types'
 import { getEventTypeInfo } from '../../lib/eventTypes'
-import { formatEventDate, downloadAllMedia } from '../../lib/format'
+import { formatEventDate, downloadAllMediaAsZip } from '../../lib/format'
 import { QrCodeCard } from '../../components/QrCodeCard'
 import { EventBrandingForm } from '../../components/EventBrandingForm'
 import { EventChallengesForm } from '../../components/EventChallengesForm'
@@ -80,7 +80,7 @@ export function AdminEventPage() {
         alert('Nenhuma mídia para exportar.')
         return
       }
-      await downloadAllMedia(items, (current, total) => {
+      await downloadAllMediaAsZip(items, event.name, (current, total) => {
         setExportProgress(`${current}/${total}`)
       })
     } catch (err) {
@@ -139,7 +139,7 @@ export function AdminEventPage() {
               disabled={exporting}
               className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 hover:text-white disabled:opacity-50"
             >
-              {exporting ? (exportProgress ? `Baixando ${exportProgress}…` : '…') : '⬇ Baixar mídias'}
+              {exporting ? (exportProgress ? `Gerando ZIP ${exportProgress}…` : '…') : '⬇ Baixar ZIP'}
             </button>
             <button
               onClick={toggleActive}
