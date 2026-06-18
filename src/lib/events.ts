@@ -1,6 +1,7 @@
 import { PHOTOS_BUCKET, supabase } from './supabase'
 import { DEFAULT_EVENT_THEME, normalizeHexColor } from './eventTheme'
-import type { Event, EventStats, EventUserRow, EventWithStats } from './types'
+import type { Event, EventChallenge, EventFace, EventStats, EventUserRow, EventWithStats, FaceAlbumEntry, Photo } from './types'
+import { matchImageToKnownFaces } from './faceRecognition'
 
 export async function fetchEvent(eventId: string): Promise<Event | null> {
   const { data, error } = await supabase
@@ -185,6 +186,276 @@ export async function setEventActive(eventId: string, isActive: boolean): Promis
     .update({ is_active: isActive })
     .eq('id', eventId)
   if (error) throw error
+}
+
+export async function updateEventChallengesSettings(
+  eventId: string,
+  input: { challenges_enabled: boolean; challenges_title: string },
+): Promise<Event> {
+  const { data, error } = await supabase
+    .from('events')
+    .update({
+      challenges_enabled: input.challenges_enabled,
+      challenges_title: input.challenges_title.trim() || 'Desafios',
+    })
+    .eq('id', eventId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Event
+}
+
+export async function fetchEventChallenges(eventId: string): Promise<EventChallenge[]> {
+  const { data, error } = await supabase
+    .from('event_challenges')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('sort_order', { ascending: true })
+  if (error) throw error
+  return (data as EventChallenge[]) ?? []
+}
+
+export async function addEventChallenge(eventId: string, text: string): Promise<EventChallenge> {
+  const trimmed = text.trim()
+  if (!trimmed) throw new Error('Digite o texto do desafio.')
+
+  const { data: existing } = await supabase
+    .from('event_challenges')
+    .select('sort_order')
+    .eq('event_id', eventId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+
+  const nextOrder = existing?.length ? (existing[0].sort_order as number) + 1 : 0
+
+  const { data, error } = await supabase
+    .from('event_challenges')
+    .insert({ event_id: eventId, text: trimmed, sort_order: nextOrder })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as EventChallenge
+}
+
+export async function removeEventChallenge(challengeId: string): Promise<void> {
+  const { error } = await supabase.from('event_challenges').delete().eq('id', challengeId)
+  if (error) throw error
+}
+
+export async function fetchUserChallengeCompletions(
+  userId: string,
+  challengeIds: string[],
+): Promise<Set<string>> {
+  if (challengeIds.length === 0) return new Set()
+  const { data, error } = await supabase
+    .from('challenge_completions')
+    .select('challenge_id')
+    .eq('user_id', userId)
+    .in('challenge_id', challengeIds)
+  if (error) throw error
+  return new Set((data ?? []).map((r) => r.challenge_id as string))
+}
+
+export async function setChallengeCompleted(
+  challengeId: string,
+  userId: string,
+  completed: boolean,
+): Promise<void> {
+  if (completed) {
+    const { error } = await supabase
+      .from('challenge_completions')
+      .upsert({ challenge_id: challengeId, user_id: userId }, { onConflict: 'challenge_id,user_id' })
+    if (error) throw error
+  } else {
+    const { error } = await supabase
+      .from('challenge_completions')
+      .delete()
+      .eq('challenge_id', challengeId)
+      .eq('user_id', userId)
+    if (error) throw error
+  }
+}
+
+export async function updateFaceAlbumSettings(
+  eventId: string,
+  faceAlbumEnabled: boolean,
+): Promise<Event> {
+  const { data, error } = await supabase
+    .from('events')
+    .update({ face_album_enabled: faceAlbumEnabled })
+    .eq('id', eventId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Event
+}
+
+export async function fetchEventFaces(eventId: string): Promise<EventFace[]> {
+  const { data, error } = await supabase
+    .from('event_faces')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data as EventFace[]) ?? []
+}
+
+export async function fetchFaceAlbumRanking(eventId: string): Promise<FaceAlbumEntry[]> {
+  const faces = await fetchEventFaces(eventId)
+  if (faces.length === 0) return []
+
+  const faceIds = faces.map((f) => f.id)
+  const { data: matches, error } = await supabase
+    .from('photo_face_matches')
+    .select('event_face_id')
+    .in('event_face_id', faceIds)
+  if (error) throw error
+
+  const counts = new Map<string, number>()
+  for (const m of matches ?? []) {
+    const id = m.event_face_id as string
+    counts.set(id, (counts.get(id) ?? 0) + 1)
+  }
+
+  return faces
+    .map((face) => ({ ...face, photoCount: counts.get(face.id) ?? 0 }))
+    .sort((a, b) => b.photoCount - a.photoCount)
+}
+
+export async function createEventFace(input: {
+  eventId: string
+  name: string
+  referenceImageUrl: string
+  referenceImagePath: string
+  descriptor: number[]
+}): Promise<EventFace> {
+  const trimmed = input.name.trim()
+  if (!trimmed) throw new Error('Digite o nome da pessoa.')
+
+  const { data, error } = await supabase
+    .from('event_faces')
+    .insert({
+      event_id: input.eventId,
+      name: trimmed,
+      reference_image_url: input.referenceImageUrl,
+      reference_image_path: input.referenceImagePath,
+      descriptor: input.descriptor,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as EventFace
+}
+
+export async function uploadEventFaceReference(
+  eventId: string,
+  file: Blob,
+  ext: string,
+): Promise<{ publicUrl: string; path: string }> {
+  const path = `${eventId}/faces/${crypto.randomUUID()}.${ext}`
+  const { error: uploadError } = await supabase.storage
+    .from(PHOTOS_BUCKET)
+    .upload(path, file, {
+      cacheControl: '3600',
+      contentType: file.type || `image/${ext}`,
+      upsert: false,
+    })
+  if (uploadError) throw uploadError
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(path)
+  return { publicUrl, path }
+}
+
+export async function deleteEventFace(face: EventFace): Promise<void> {
+  if (face.reference_image_path) {
+    await supabase.storage.from(PHOTOS_BUCKET).remove([face.reference_image_path])
+  }
+  const { error } = await supabase.from('event_faces').delete().eq('id', face.id)
+  if (error) throw error
+}
+
+export async function savePhotoFaceMatches(
+  photoId: string,
+  matches: { eventFaceId: string; confidence: number }[],
+): Promise<void> {
+  await supabase.from('photo_face_matches').delete().eq('photo_id', photoId)
+  if (matches.length === 0) return
+
+  const { error } = await supabase.from('photo_face_matches').insert(
+    matches.map((m) => ({
+      photo_id: photoId,
+      event_face_id: m.eventFaceId,
+      confidence: m.confidence,
+    })),
+  )
+  if (error) throw error
+}
+
+export async function matchPhotoToRegisteredFaces(
+  photoId: string,
+  imageUrl: string,
+  eventId: string,
+): Promise<void> {
+  const faces = await fetchEventFaces(eventId)
+  if (faces.length === 0) return
+
+  const known = faces.map((f) => ({ id: f.id, descriptor: f.descriptor }))
+  const matches = await matchImageToKnownFaces(imageUrl, known)
+  await savePhotoFaceMatches(
+    photoId,
+    matches.map((m) => ({ eventFaceId: m.eventFaceId, confidence: m.confidence })),
+  )
+}
+
+const PHOTO_FACE_QUERY =
+  '*, user:users(id, username), likes(user_id), comments(*, user:users(id, username))'
+
+export async function fetchPhotosForFace(
+  eventFaceId: string,
+  eventId: string,
+): Promise<Photo[]> {
+  const { data: matchRows, error: matchError } = await supabase
+    .from('photo_face_matches')
+    .select('photo_id')
+    .eq('event_face_id', eventFaceId)
+  if (matchError) throw matchError
+
+  const photoIds = (matchRows ?? []).map((r) => r.photo_id as string)
+  if (photoIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('photos')
+    .select(PHOTO_FACE_QUERY)
+    .eq('event_id', eventId)
+    .in('id', photoIds)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data as Photo[]) ?? []
+}
+
+export async function reprocessAllEventFaceMatches(
+  eventId: string,
+  onProgress?: (current: number, total: number) => void,
+): Promise<void> {
+  const faces = await fetchEventFaces(eventId)
+  if (faces.length === 0) return
+
+  const { data: photos, error } = await supabase
+    .from('photos')
+    .select('id, image_url')
+    .eq('event_id', eventId)
+    .eq('media_type', 'image')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+
+  const items = photos ?? []
+  for (let i = 0; i < items.length; i++) {
+    const photo = items[i]
+    await matchPhotoToRegisteredFaces(photo.id as string, photo.image_url as string, eventId)
+    onProgress?.(i + 1, items.length)
+  }
 }
 
 export async function joinEvent(eventId: string, userId: string): Promise<void> {

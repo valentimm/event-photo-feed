@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "postinstall": "node -e \"const fs=require('fs');const p='public/models';if(!fs.existsSync(p))fs.mkdirSync(p,{recursive:true});const src='node_modules/@vladmandic/face-api/model';if(fs.existsSync(src))fs.cpSync(src,p,{recursive:true});\"",
     "lint": "eslint .",
     "preview": "vite preview",
     "sync": "npm run build && cap sync",
@@ -19,6 +20,7 @@
     "@capacitor/core": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
     "@supabase/supabase-js": "^2.108.2",
+    "@vladmandic/face-api": "^1.7.15",
     "qrcode": "^1.5.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

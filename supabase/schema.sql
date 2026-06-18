@@ -32,6 +32,9 @@ create table if not exists public.events (
   color_gradient_end text not null default '#312e81',
   logo_url text,
   is_active   boolean not null default true,
+  challenges_enabled boolean not null default false,
+  challenges_title text not null default 'Desafios',
+  face_album_enabled boolean not null default false,
   created_at  timestamptz not null default now()
 );
 
@@ -88,12 +91,51 @@ create table if not exists public.comments (
   created_at  timestamptz not null default now()
 );
 
+create table if not exists public.event_challenges (
+  id          uuid primary key default gen_random_uuid(),
+  event_id    uuid not null references public.events (id) on delete cascade,
+  text        text not null,
+  sort_order  int not null default 0,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.challenge_completions (
+  id            uuid primary key default gen_random_uuid(),
+  challenge_id  uuid not null references public.event_challenges (id) on delete cascade,
+  user_id       uuid not null references public.users (id) on delete cascade,
+  completed_at  timestamptz not null default now(),
+  unique (challenge_id, user_id)
+);
+
+create table if not exists public.event_faces (
+  id                    uuid primary key default gen_random_uuid(),
+  event_id              uuid not null references public.events (id) on delete cascade,
+  name                  text not null,
+  reference_image_url   text not null,
+  reference_image_path  text,
+  descriptor            jsonb not null,
+  created_at            timestamptz not null default now()
+);
+
+create table if not exists public.photo_face_matches (
+  id            uuid primary key default gen_random_uuid(),
+  photo_id      uuid not null references public.photos (id) on delete cascade,
+  event_face_id uuid not null references public.event_faces (id) on delete cascade,
+  confidence    real not null default 0,
+  created_at    timestamptz not null default now(),
+  unique (photo_id, event_face_id)
+);
+
 -- Indices uteis para o feed
 create index if not exists photos_event_created_idx on public.photos (event_id, created_at desc);
 create index if not exists photos_created_at_idx on public.photos (created_at desc);
 create index if not exists likes_photo_id_idx on public.likes (photo_id);
 create index if not exists comments_photo_id_idx on public.comments (photo_id);
 create index if not exists event_memberships_event_idx on public.event_memberships (event_id);
+create index if not exists event_challenges_event_idx on public.event_challenges (event_id, sort_order);
+create index if not exists event_faces_event_idx on public.event_faces (event_id);
+create index if not exists photo_face_matches_face_idx on public.photo_face_matches (event_face_id);
+create index if not exists photo_face_matches_photo_idx on public.photo_face_matches (photo_id);
 
 -- ---------------------------------------------------------------------
 -- Row Level Security (publico - sem Supabase Auth)
@@ -106,6 +148,10 @@ alter table public.event_memberships enable row level security;
 alter table public.photos           enable row level security;
 alter table public.likes            enable row level security;
 alter table public.comments         enable row level security;
+alter table public.event_challenges enable row level security;
+alter table public.challenge_completions enable row level security;
+alter table public.event_faces enable row level security;
+alter table public.photo_face_matches enable row level security;
 
 -- Policies abertas para a chave anon (leitura/escrita liberadas).
 do $$
@@ -137,6 +183,22 @@ begin
   -- comments
   if not exists (select 1 from pg_policies where tablename = 'comments' and policyname = 'comments_public_all') then
     create policy comments_public_all on public.comments for all using (true) with check (true);
+  end if;
+  -- event_challenges
+  if not exists (select 1 from pg_policies where tablename = 'event_challenges' and policyname = 'event_challenges_public_all') then
+    create policy event_challenges_public_all on public.event_challenges for all using (true) with check (true);
+  end if;
+  -- challenge_completions
+  if not exists (select 1 from pg_policies where tablename = 'challenge_completions' and policyname = 'challenge_completions_public_all') then
+    create policy challenge_completions_public_all on public.challenge_completions for all using (true) with check (true);
+  end if;
+  -- event_faces
+  if not exists (select 1 from pg_policies where tablename = 'event_faces' and policyname = 'event_faces_public_all') then
+    create policy event_faces_public_all on public.event_faces for all using (true) with check (true);
+  end if;
+  -- photo_face_matches
+  if not exists (select 1 from pg_policies where tablename = 'photo_face_matches' and policyname = 'photo_face_matches_public_all') then
+    create policy photo_face_matches_public_all on public.photo_face_matches for all using (true) with check (true);
   end if;
 end $$;
 

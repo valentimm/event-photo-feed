@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { groupPhotosByDay } from '../lib/format'
-import type { Photo } from '../lib/types'
+import type { Event, Photo } from '../lib/types'
 import { MediaLightbox } from './MediaLightbox'
 import { NewPostForm } from './NewPostForm'
+import { PersonAlbumsView } from './PersonAlbumsView'
 import { PhotoCard } from './PhotoCard'
+import { VideoPlayOverlay } from './VideoPlayOverlay'
 
 const PHOTO_QUERY =
   '*, user:users(id, username), likes(user_id), comments(*, user:users(id, username))'
 
-type ViewMode = 'feed' | 'grid' | 'timeline'
+type ViewMode = 'feed' | 'grid' | 'timeline' | 'people'
 
 interface FeedProps {
-  eventId: string
+  event: Event
 }
 
-export function Feed({ eventId }: FeedProps) {
+export function Feed({ event }: FeedProps) {
+  const eventId = event.id
+  const faceAlbumEnabled = event.face_album_enabled ?? false
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -73,15 +77,22 @@ export function Feed({ eventId }: FeedProps) {
 
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 py-5">
-      <NewPostForm eventId={eventId} onPosted={loadPhotos} />
+      <NewPostForm
+        eventId={eventId}
+        faceAlbumEnabled={faceAlbumEnabled}
+        onPosted={loadPhotos}
+      />
 
-      {!loading && photos.length > 0 && (
+      {!loading && (photos.length > 0 || faceAlbumEnabled) && (
         <div className="flex rounded-xl ev-surface p-1">
           {(
             [
               { id: 'feed' as const, label: 'Feed', icon: '📋' },
               { id: 'grid' as const, label: 'Galeria', icon: '🖼️' },
               { id: 'timeline' as const, label: 'Linha do tempo', icon: '📅' },
+              ...(faceAlbumEnabled
+                ? [{ id: 'people' as const, label: 'Pessoas', icon: '👤' }]
+                : []),
             ] as const
           ).map((mode) => (
             <button
@@ -134,10 +145,14 @@ export function Feed({ eventId }: FeedProps) {
             >
               {photo.media_type === 'video' ? (
                 <>
-                  <video src={photo.image_url} className="h-full w-full object-cover" muted />
-                  <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 text-xs">
-                    ▶
-                  </span>
+                  <video
+                    src={photo.image_url}
+                    className="h-full w-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                  <VideoPlayOverlay />
                 </>
               ) : (
                 <img
@@ -170,6 +185,8 @@ export function Feed({ eventId }: FeedProps) {
             </div>
           </section>
         ))}
+
+      {view === 'people' && faceAlbumEnabled && <PersonAlbumsView eventId={eventId} />}
 
       {lightboxIndex !== null && (
         <MediaLightbox

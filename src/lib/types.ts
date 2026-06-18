@@ -19,6 +19,31 @@ export interface Event {
   color_gradient_end: string
   logo_url: string | null
   is_active: boolean
+  challenges_enabled: boolean
+  challenges_title: string
+  face_album_enabled: boolean
+  created_at: string
+}
+
+export interface EventFace {
+  id: string
+  event_id: string
+  name: string
+  reference_image_url: string
+  reference_image_path: string | null
+  descriptor: number[]
+  created_at: string
+}
+
+export interface FaceAlbumEntry extends EventFace {
+  photoCount: number
+}
+
+export interface EventChallenge {
+  id: string
+  event_id: string
+  text: string
+  sort_order: number
   created_at: string
 }
 

@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { PHOTOS_BUCKET, supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import type { Comment, Photo } from '../lib/types'
+import { FeedVideo } from './FeedVideo'
 
 interface PhotoCardProps {
   photo: Photo
@@ -126,14 +127,7 @@ export function PhotoCard({ photo, onDeleted, onMediaClick }: PhotoCardProps) {
       </div>
 
       {photo.media_type === 'video' ? (
-        <video
-          src={photo.image_url}
-          controls
-          playsInline
-          preload="metadata"
-          className="w-full cursor-pointer bg-black"
-          onClick={onMediaClick}
-        />
+        <FeedVideo src={photo.image_url} onClick={onMediaClick} />
       ) : (
         <button type="button" onClick={onMediaClick} className="block w-full">
           <img

@@ -107,7 +107,7 @@ export function EventPage() {
   return (
     <EventThemeProvider event={event} className="min-h-screen ev-bg-page">
       <Header event={event} stats={stats ?? undefined} />
-      <Feed eventId={event.id} />
+      <Feed event={event} />
     </EventThemeProvider>
   )
 }

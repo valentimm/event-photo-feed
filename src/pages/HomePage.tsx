@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-fuchsia-950/30 via-zinc-950 to-zinc-950">
+    <div className="flex min-h-screen flex-col bg-linear-to-b from-fuchsia-950/30 via-zinc-950 to-zinc-950">
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-fuchsia-500/20 text-5xl">
           📸

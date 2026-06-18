@@ -57,3 +57,39 @@ export async function downloadMedia(url: string, filename: string) {
   a.click()
   URL.revokeObjectURL(objectUrl)
 }
+
+function extFromUrl(url: string, mediaType: string): string {
+  const path = url.split('?')[0]
+  const match = path.match(/\.([a-zA-Z0-9]+)$/)
+  if (match) return match[1].toLowerCase()
+  return mediaType === 'video' ? 'mp4' : 'jpg'
+}
+
+function safeFilenamePart(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40) || 'arquivo'
+}
+
+export interface MediaDownloadItem {
+  url: string
+  media_type: string
+  created_at: string
+  username: string
+}
+
+/** Baixa cada mídia como arquivo (foto/vídeo), com pequeno intervalo entre downloads. */
+export async function downloadAllMedia(
+  items: MediaDownloadItem[],
+  onProgress?: (current: number, total: number) => void,
+): Promise<void> {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    const ext = extFromUrl(item.url, item.media_type)
+    const date = item.created_at.slice(0, 10)
+    const filename = `${safeFilenamePart(item.username)}-${date}-${String(i + 1).padStart(3, '0')}.${ext}`
+    await downloadMedia(item.url, filename)
+    onProgress?.(i + 1, items.length)
+    if (i < items.length - 1) {
+      await new Promise((r) => setTimeout(r, 400))
+    }
+  }
+}

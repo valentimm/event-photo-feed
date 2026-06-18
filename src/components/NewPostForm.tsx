@@ -2,11 +2,14 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { PHOTOS_BUCKET, supabase } from '../lib/supabase'
+import { matchPhotoToRegisteredFaces } from '../lib/events'
 import { useAuth } from '../lib/auth'
 import type { MediaType } from '../lib/types'
+import { VideoPlayOverlay } from './VideoPlayOverlay'
 
 interface NewPostFormProps {
   eventId: string
+  faceAlbumEnabled?: boolean
   onPosted: () => void
 }
 
@@ -35,7 +38,6 @@ function extFromName(name: string): string {
   return idx >= 0 ? name.slice(idx + 1).toLowerCase() : 'jpg'
 }
 
-/** Lê a duração (em segundos) de um vídeo a partir do object URL. */
 function getVideoDuration(url: string): Promise<number> {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video')
@@ -46,7 +48,37 @@ function getVideoDuration(url: string): Promise<number> {
   })
 }
 
-export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
+function VideoPreview({ src }: { src: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [playing, setPlaying] = useState(false)
+
+  function togglePlay() {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) {
+      void video.play()
+    } else {
+      video.pause()
+    }
+  }
+
+  return (
+    <div className="relative">
+      <video
+        ref={videoRef}
+        src={src}
+        playsInline
+        className="max-h-80 w-full cursor-pointer rounded-xl bg-black"
+        onClick={togglePlay}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+      />
+      {!playing && <VideoPlayOverlay className="rounded-xl" />}
+    </div>
+  )
+}
+
+export function NewPostForm({ eventId, faceAlbumEnabled, onPosted }: NewPostFormProps) {
   const { user } = useAuth()
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -164,17 +196,25 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
         data: { publicUrl },
       } = supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(path)
 
-      const { error: insertError } = await supabase.from('photos').insert({
-        event_id: eventId,
-        user_id: user.id,
-        image_url: publicUrl,
-        image_path: path,
-        media_type: media.mediaType,
-        caption: caption.trim() || null,
-      })
+      const { data: inserted, error: insertError } = await supabase
+        .from('photos')
+        .insert({
+          event_id: eventId,
+          user_id: user.id,
+          image_url: publicUrl,
+          image_path: path,
+          media_type: media.mediaType,
+          caption: caption.trim() || null,
+        })
+        .select('id')
+        .single()
       if (insertError) {
         await supabase.storage.from(PHOTOS_BUCKET).remove([path])
         throw insertError
+      }
+
+      if (faceAlbumEnabled && media.mediaType === 'image' && inserted?.id) {
+        void matchPhotoToRegisteredFaces(inserted.id, publicUrl, eventId).catch(() => {})
       }
 
       reset()
@@ -191,12 +231,7 @@ export function NewPostForm({ eventId, onPosted }: NewPostFormProps) {
       {media ? (
         <div className="space-y-3">
           {media.mediaType === 'video' ? (
-            <video
-              src={media.previewUrl}
-              controls
-              playsInline
-              className="max-h-80 w-full rounded-xl bg-black"
-            />
+            <VideoPreview src={media.previewUrl} />
           ) : (
             <img
               src={media.previewUrl}

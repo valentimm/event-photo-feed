@@ -11,9 +11,11 @@ import {
 } from '../../lib/events'
 import type { Event, EventStats, EventUserRow } from '../../lib/types'
 import { getEventTypeInfo } from '../../lib/eventTypes'
-import { formatEventDate } from '../../lib/format'
+import { formatEventDate, downloadAllMedia } from '../../lib/format'
 import { QrCodeCard } from '../../components/QrCodeCard'
 import { EventBrandingForm } from '../../components/EventBrandingForm'
+import { EventChallengesForm } from '../../components/EventChallengesForm'
+import { EventFaceAlbumForm } from '../../components/EventFaceAlbumForm'
 
 export function AdminEventPage() {
   const { eventId } = useParams<{ eventId: string }>()
@@ -24,6 +26,7 @@ export function AdminEventPage() {
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [exportProgress, setExportProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function load() {
@@ -70,29 +73,21 @@ export function AdminEventPage() {
   async function exportMedia() {
     if (!eventId || !event) return
     setExporting(true)
+    setExportProgress(null)
     try {
       const items = await fetchEventMediaExport(eventId)
       if (items.length === 0) {
         alert('Nenhuma mídia para exportar.')
         return
       }
-      const lines = [
-        'url,tipo,autor,data',
-        ...items.map(
-          (i) => `"${i.url}","${i.media_type}","${i.username}","${i.created_at}"`,
-        ),
-      ]
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${event.name}-midias.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      await downloadAllMedia(items, (current, total) => {
+        setExportProgress(`${current}/${total}`)
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao exportar.')
     } finally {
       setExporting(false)
+      setExportProgress(null)
     }
   }
 
@@ -144,7 +139,7 @@ export function AdminEventPage() {
               disabled={exporting}
               className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 hover:text-white disabled:opacity-50"
             >
-              {exporting ? '…' : '⬇ Exportar mídias'}
+              {exporting ? (exportProgress ? `Baixando ${exportProgress}…` : '…') : '⬇ Baixar mídias'}
             </button>
             <button
               onClick={toggleActive}
@@ -163,6 +158,10 @@ export function AdminEventPage() {
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
         <EventBrandingForm event={event} onUpdated={setEvent} />
+
+        <EventChallengesForm event={event} onUpdated={setEvent} />
+
+        <EventFaceAlbumForm event={event} onUpdated={setEvent} />
 
         <QrCodeCard url={joinUrl} />
 

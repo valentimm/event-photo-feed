@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { getEventJoinUrl } from '../lib/appUrl'
 import { useAuth } from '../lib/auth'
 import type { Event, EventStats } from '../lib/types'
+import { ChallengesSheet } from './ChallengesSheet'
 import { EventLogo } from './EventLogo'
 
 interface HeaderProps {
@@ -10,7 +12,9 @@ interface HeaderProps {
 
 export function Header({ event, stats }: HeaderProps) {
   const { user, logout } = useAuth()
+  const [challengesOpen, setChallengesOpen] = useState(false)
   const totalMedia = stats ? stats.photos + stats.videos : null
+  const challengesEnabled = event.challenges_enabled ?? false
 
   async function handleShare() {
     const url = getEventJoinUrl(event.id)
@@ -45,6 +49,15 @@ export function Header({ event, stats }: HeaderProps) {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {challengesEnabled && (
+              <button
+                onClick={() => setChallengesOpen(true)}
+                className="ev-btn-ghost rounded-lg px-2.5 py-1.5 text-sm transition"
+                title={event.challenges_title || 'Desafios'}
+              >
+                🎯
+              </button>
+            )}
             <button
               onClick={handleShare}
               className="ev-btn-ghost rounded-lg px-2.5 py-1.5 text-sm transition"
@@ -61,6 +74,13 @@ export function Header({ event, stats }: HeaderProps) {
           </div>
         </div>
       </div>
+      {challengesEnabled && (
+        <ChallengesSheet
+          event={event}
+          open={challengesOpen}
+          onClose={() => setChallengesOpen(false)}
+        />
+      )}
     </header>
   )
 }
