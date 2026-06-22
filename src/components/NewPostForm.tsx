@@ -360,7 +360,7 @@ export function NewPostForm({ eventId, faceAlbumEnabled, onPosted }: NewPostForm
             </button>
           </div>
           <p className="text-center text-xs ev-text-muted">
-            Vídeos de até {MAX_VIDEO_SECONDS} segundos — a gravação para automaticamente no limite.
+            Vídeos de até {MAX_VIDEO_SECONDS} segundos.
           </p>
           {error && <p className="text-center text-sm text-red-400">{error}</p>}
         </div>

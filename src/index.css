@@ -184,3 +184,62 @@ body {
     transform: translateX(0);
   }
 }
+
+@keyframes challenge-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes challenge-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.challenge-enter {
+  animation: challenge-enter 0.4s ease-out both;
+}
+
+.challenge-fade-in {
+  animation: challenge-fade-in 0.35s ease-out both;
+}
+
+.challenge-skeleton {
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.challenge-progress-fill {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.challenge-progress-indeterminate {
+  animation: progress-indeterminate 1.2s ease-in-out infinite;
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getEventJoinUrl } from '../lib/appUrl'
 import { useAuth } from '../lib/auth'
+import { useEventChallenges } from '../hooks/useEventChallenges'
 import type { Event, EventStats } from '../lib/types'
 import { ChallengesSheet } from './ChallengesSheet'
 import { EventLogo } from './EventLogo'
@@ -15,6 +16,11 @@ export function Header({ event, stats }: HeaderProps) {
   const [challengesOpen, setChallengesOpen] = useState(false)
   const totalMedia = stats ? stats.photos + stats.videos : null
   const challengesEnabled = event.challenges_enabled ?? false
+  const challenges = useEventChallenges({
+    eventId: event.id,
+    enabled: challengesEnabled,
+    userId: user?.id,
+  })
 
   async function handleShare() {
     const url = getEventJoinUrl(event.id)
@@ -52,10 +58,15 @@ export function Header({ event, stats }: HeaderProps) {
             {challengesEnabled && (
               <button
                 onClick={() => setChallengesOpen(true)}
-                className="ev-btn-ghost rounded-lg px-2.5 py-1.5 text-sm transition"
+                className="relative ev-btn-ghost rounded-lg px-2.5 py-1.5 text-sm transition"
                 title={event.challenges_title || 'Desafios'}
               >
                 🎯
+                {challenges.challenges.length > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-white ev-bg-primary">
+                    {challenges.doneCount}/{challenges.challenges.length}
+                  </span>
+                )}
               </button>
             )}
             <button
@@ -79,6 +90,14 @@ export function Header({ event, stats }: HeaderProps) {
           event={event}
           open={challengesOpen}
           onClose={() => setChallengesOpen(false)}
+          challenges={challenges.challenges}
+          completed={challenges.completed}
+          doneCount={challenges.doneCount}
+          progress={challenges.progress}
+          loadingList={challenges.loadingList}
+          loadingCompletions={challenges.loadingCompletions}
+          busy={challenges.busy}
+          onToggle={(id) => void challenges.toggle(id)}
         />
       )}
     </header>
