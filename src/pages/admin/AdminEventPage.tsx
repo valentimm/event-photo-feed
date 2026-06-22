@@ -15,6 +15,7 @@ import { formatEventDate, downloadAllMediaAsZip } from '../../lib/format'
 import { QrCodeCard } from '../../components/QrCodeCard'
 import { EventBrandingForm } from '../../components/EventBrandingForm'
 import { EventChallengesForm } from '../../components/EventChallengesForm'
+import { EventTeamsForm } from '../../components/EventTeamsForm'
 import { EventFaceAlbumForm } from '../../components/EventFaceAlbumForm'
 
 export function AdminEventPage() {
@@ -161,6 +162,8 @@ export function AdminEventPage() {
 
         <EventChallengesForm event={event} onUpdated={setEvent} />
 
+        <EventTeamsForm event={event} onUpdated={setEvent} />
+
         <EventFaceAlbumForm event={event} onUpdated={setEvent} />
 
         <QrCodeCard url={joinUrl} />
@@ -193,6 +196,7 @@ export function AdminEventPage() {
                 <thead>
                   <tr className="border-b border-white/10 text-zinc-400">
                     <th className="pb-2 pr-4 font-medium">Nome</th>
+                    <th className="pb-2 pr-4 font-medium">Time</th>
                     <th className="pb-2 pr-4 font-medium">Entrou em</th>
                     <th className="pb-2 pr-4 font-medium">Posts</th>
                     <th className="pb-2 pr-4 font-medium">Curtidas</th>
@@ -203,6 +207,7 @@ export function AdminEventPage() {
                   {users.map((u) => (
                     <tr key={u.userId} className="border-b border-white/5">
                       <td className="py-3 pr-4 font-medium text-white">{u.username}</td>
+                      <td className="py-3 pr-4 text-zinc-400">{u.teamName ?? '—'}</td>
                       <td className="py-3 pr-4 text-zinc-400">
                         {new Date(u.joinedAt).toLocaleString('pt-BR')}
                       </td>

@@ -35,6 +35,7 @@ create table if not exists public.events (
   challenges_enabled boolean not null default false,
   challenges_title text not null default 'Desafios',
   face_album_enabled boolean not null default false,
+  teams_enabled boolean not null default false,
   created_at  timestamptz not null default now()
 );
 
@@ -49,10 +50,19 @@ insert into public.admins (username, password)
 values ('admin', 'admin1322')
 on conflict (username) do nothing;
 
+create table if not exists public.event_teams (
+  id          uuid primary key default gen_random_uuid(),
+  event_id    uuid not null references public.events (id) on delete cascade,
+  name        text not null,
+  sort_order  int not null default 0,
+  created_at  timestamptz not null default now()
+);
+
 create table if not exists public.event_memberships (
   id          uuid primary key default gen_random_uuid(),
   event_id    uuid not null references public.events (id) on delete cascade,
   user_id     uuid not null references public.users (id) on delete cascade,
+  team_id     uuid references public.event_teams (id) on delete set null,
   joined_at   timestamptz not null default now(),
   unique (event_id, user_id)
 );
@@ -136,6 +146,7 @@ create index if not exists likes_photo_id_idx on public.likes (photo_id);
 create index if not exists comments_photo_id_idx on public.comments (photo_id);
 create index if not exists event_memberships_event_idx on public.event_memberships (event_id);
 create index if not exists event_challenges_event_idx on public.event_challenges (event_id, sort_order);
+create index if not exists event_teams_event_idx on public.event_teams (event_id, sort_order);
 create index if not exists event_faces_event_idx on public.event_faces (event_id);
 create index if not exists photo_face_matches_face_idx on public.photo_face_matches (event_face_id);
 create index if not exists photo_face_matches_photo_idx on public.photo_face_matches (photo_id);
@@ -151,6 +162,7 @@ alter table public.event_memberships enable row level security;
 alter table public.photos           enable row level security;
 alter table public.likes            enable row level security;
 alter table public.comments         enable row level security;
+alter table public.event_teams enable row level security;
 alter table public.event_challenges enable row level security;
 alter table public.challenge_completions enable row level security;
 alter table public.event_faces enable row level security;
@@ -186,6 +198,10 @@ begin
   -- comments
   if not exists (select 1 from pg_policies where tablename = 'comments' and policyname = 'comments_public_all') then
     create policy comments_public_all on public.comments for all using (true) with check (true);
+  end if;
+  -- event_teams
+  if not exists (select 1 from pg_policies where tablename = 'event_teams' and policyname = 'event_teams_public_all') then
+    create policy event_teams_public_all on public.event_teams for all using (true) with check (true);
   end if;
   -- event_challenges
   if not exists (select 1 from pg_policies where tablename = 'event_challenges' and policyname = 'event_challenges_public_all') then

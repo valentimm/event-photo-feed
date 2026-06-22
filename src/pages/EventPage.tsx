@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { fetchEvent, fetchEventStats, joinEvent } from '../lib/events'
+import { fetchEvent, fetchEventStats, fetchEventTeams, fetchUserMembershipTeam, joinEvent } from '../lib/events'
+import { themeCssVars, themeFromEvent } from '../lib/eventTheme'
 import type { Event, EventStats } from '../lib/types'
 import { EventThemeProvider } from '../components/EventThemeProvider'
 import { EventWelcome } from '../components/EventWelcome'
 import { Header } from '../components/Header'
 import { Feed } from '../components/Feed'
 import { LoginScreen } from '../components/LoginScreen'
+import { TeamPickerModal } from '../components/TeamPickerModal'
 
 export function EventPage() {
   const { eventId } = useParams<{ eventId: string }>()
@@ -17,6 +19,8 @@ export function EventPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showLogin, setShowLogin] = useState(false)
+  const [needsTeamPick, setNeedsTeamPick] = useState(false)
+  const [checkingTeam, setCheckingTeam] = useState(false)
 
   useEffect(() => {
     if (!eventId) return
@@ -56,8 +60,38 @@ export function EventPage() {
   }, [eventId, user])
 
   useEffect(() => {
-    if (user && event?.is_active) {
-      void joinEvent(event.id, user.id).catch(() => {})
+    if (!user || !event?.is_active) {
+      setNeedsTeamPick(false)
+      return
+    }
+
+    let cancelled = false
+    setCheckingTeam(true)
+
+    void (async () => {
+      try {
+        await joinEvent(event.id, user.id)
+        if (cancelled) return
+
+        if (!event.teams_enabled) {
+          setNeedsTeamPick(false)
+          return
+        }
+
+        const [teamId, teams] = await Promise.all([
+          fetchUserMembershipTeam(event.id, user.id),
+          fetchEventTeams(event.id),
+        ])
+        if (!cancelled) setNeedsTeamPick(!teamId && teams.length > 0)
+      } catch {
+        if (!cancelled) setNeedsTeamPick(false)
+      } finally {
+        if (!cancelled) setCheckingTeam(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
   }, [user, event])
 
@@ -108,6 +142,14 @@ export function EventPage() {
     <EventThemeProvider event={event} className="min-h-screen ev-bg-page">
       <Header event={event} stats={stats ?? undefined} />
       <Feed event={event} />
+      {needsTeamPick && user && !checkingTeam && (
+        <TeamPickerModal
+          event={event}
+          userId={user.id}
+          themeStyle={themeCssVars(themeFromEvent(event))}
+          onComplete={() => setNeedsTeamPick(false)}
+        />
+      )}
     </EventThemeProvider>
   )
 }

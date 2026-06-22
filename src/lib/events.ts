@@ -1,6 +1,6 @@
 import { PHOTOS_BUCKET, supabase } from './supabase'
 import { DEFAULT_EVENT_THEME, normalizeHexColor } from './eventTheme'
-import type { Event, EventChallenge, EventFace, EventStats, EventUserRow, EventWithStats, FaceAlbumEntry, Photo } from './types'
+import type { Event, EventChallenge, EventFace, EventStats, EventTeam, EventUserRow, EventWithStats, FaceAlbumEntry, Photo } from './types'
 import { matchImageToKnownFaces } from './faceRecognition'
 
 export async function fetchEvent(eventId: string): Promise<Event | null> {
@@ -242,6 +242,84 @@ export async function removeEventChallenge(challengeId: string): Promise<void> {
   if (error) throw error
 }
 
+export async function updateEventTeamsSettings(
+  eventId: string,
+  teamsEnabled: boolean,
+): Promise<Event> {
+  const { data, error } = await supabase
+    .from('events')
+    .update({ teams_enabled: teamsEnabled })
+    .eq('id', eventId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Event
+}
+
+export async function fetchEventTeams(eventId: string): Promise<EventTeam[]> {
+  const { data, error } = await supabase
+    .from('event_teams')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('sort_order', { ascending: true })
+  if (error) throw error
+  return (data as EventTeam[]) ?? []
+}
+
+export async function addEventTeam(eventId: string, name: string): Promise<EventTeam> {
+  const trimmed = name.trim()
+  if (!trimmed) throw new Error('Digite o nome do time.')
+
+  const { data: existing } = await supabase
+    .from('event_teams')
+    .select('sort_order')
+    .eq('event_id', eventId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+
+  const nextOrder = existing?.length ? (existing[0].sort_order as number) + 1 : 0
+
+  const { data, error } = await supabase
+    .from('event_teams')
+    .insert({ event_id: eventId, name: trimmed, sort_order: nextOrder })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as EventTeam
+}
+
+export async function removeEventTeam(teamId: string): Promise<void> {
+  const { error } = await supabase.from('event_teams').delete().eq('id', teamId)
+  if (error) throw error
+}
+
+export async function fetchUserMembershipTeam(
+  eventId: string,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('event_memberships')
+    .select('team_id')
+    .eq('event_id', eventId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return (data?.team_id as string | null) ?? null
+}
+
+export async function setUserTeam(
+  eventId: string,
+  userId: string,
+  teamId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('event_memberships')
+    .update({ team_id: teamId })
+    .eq('event_id', eventId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
 export async function fetchUserChallengeCompletions(
   userId: string,
   challengeIds: string[],
@@ -470,7 +548,7 @@ export async function fetchEventUsers(eventId: string): Promise<EventUserRow[]> 
   const [membershipsRes, photosRes] = await Promise.all([
     supabase
       .from('event_memberships')
-      .select('joined_at, user:users(id, username)')
+      .select('joined_at, event_teams(name), user:users(id, username)')
       .eq('event_id', eventId)
       .order('joined_at', { ascending: false }),
     supabase.from('photos').select('id, user_id').eq('event_id', eventId),
@@ -509,9 +587,12 @@ export async function fetchEventUsers(eventId: string): Promise<EventUserRow[]> 
       | { id: string; username: string }
       | null
       | undefined
+    const rawTeam = row.event_teams as unknown
+    const team = (Array.isArray(rawTeam) ? rawTeam[0] : rawTeam) as { name: string } | null
     return {
       userId: user?.id ?? '',
       username: user?.username ?? '—',
+      teamName: team?.name ?? null,
       joinedAt: row.joined_at as string,
       posts: postCounts.get(user?.id ?? '') ?? 0,
       likesGiven: likeCounts.get(user?.id ?? '') ?? 0,

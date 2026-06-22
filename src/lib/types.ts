@@ -22,6 +22,7 @@ export interface Event {
   challenges_enabled: boolean
   challenges_title: string
   face_album_enabled: boolean
+  teams_enabled: boolean
   created_at: string
 }
 
@@ -47,10 +48,19 @@ export interface EventChallenge {
   created_at: string
 }
 
+export interface EventTeam {
+  id: string
+  event_id: string
+  name: string
+  sort_order: number
+  created_at: string
+}
+
 export interface EventMembership {
   id: string
   event_id: string
   user_id: string
+  team_id: string | null
   joined_at: string
   user?: Pick<User, 'id' | 'username' | 'created_at'> | null
 }
@@ -70,6 +80,7 @@ export interface EventWithStats extends Event {
 export interface EventUserRow {
   userId: string
   username: string
+  teamName: string | null
   joinedAt: string
   posts: number
   likesGiven: number

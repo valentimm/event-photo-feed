@@ -6,6 +6,7 @@ import { matchPhotoToRegisteredFaces } from '../lib/events'
 import { useAuth } from '../lib/auth'
 import type { MediaType } from '../lib/types'
 import { VideoPlayOverlay } from './VideoPlayOverlay'
+import { VideoRecorderModal } from './VideoRecorderModal'
 
 interface NewPostFormProps {
   eventId: string
@@ -31,6 +32,17 @@ function extFromMime(mime: string): string {
   if (mime.includes('mp4')) return 'mp4'
   if (mime.includes('webm')) return 'webm'
   return 'jpg'
+}
+
+function canRecordVideoInApp(): boolean {
+  if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) return false
+  const candidates = [
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ]
+  return candidates.some((t) => MediaRecorder.isTypeSupported(t))
 }
 
 function extFromName(name: string): string {
@@ -80,12 +92,15 @@ function VideoPreview({ src }: { src: string }) {
 
 export function NewPostForm({ eventId, faceAlbumEnabled, onPosted }: NewPostFormProps) {
   const { user } = useAuth()
-  const photoInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
+  const photoCameraInputRef = useRef<HTMLInputElement>(null)
+  const photoGalleryInputRef = useRef<HTMLInputElement>(null)
+  const videoGalleryInputRef = useRef<HTMLInputElement>(null)
+  const videoCaptureInputRef = useRef<HTMLInputElement>(null)
   const [media, setMedia] = useState<PickedMedia | null>(null)
   const [caption, setCaption] = useState('')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showVideoRecorder, setShowVideoRecorder] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -153,7 +168,7 @@ export function NewPostForm({ eventId, faceAlbumEnabled, onPosted }: NewPostForm
         setError(
           `O vídeo tem ${Math.round(duration)}s. O limite é de ${MAX_VIDEO_SECONDS} segundos.`,
         )
-        if (videoInputRef.current) videoInputRef.current.value = ''
+        if (videoGalleryInputRef.current) videoGalleryInputRef.current.value = ''
         return
       }
       setPicked({
@@ -168,12 +183,32 @@ export function NewPostForm({ eventId, faceAlbumEnabled, onPosted }: NewPostForm
     }
   }
 
+  function handleRecordedVideo(blob: Blob, previewUrl: string) {
+    setError(null)
+    setPicked({
+      blob,
+      ext: extFromMime(blob.type),
+      previewUrl,
+      mediaType: 'video',
+    })
+  }
+
   function reset() {
     setPicked(null)
     setCaption('')
     setError(null)
-    if (photoInputRef.current) photoInputRef.current.value = ''
-    if (videoInputRef.current) videoInputRef.current.value = ''
+    if (photoCameraInputRef.current) photoCameraInputRef.current.value = ''
+    if (photoGalleryInputRef.current) photoGalleryInputRef.current.value = ''
+    if (videoGalleryInputRef.current) videoGalleryInputRef.current.value = ''
+    if (videoCaptureInputRef.current) videoCaptureInputRef.current.value = ''
+  }
+
+  function openVideoRecorder() {
+    if (canRecordVideoInApp()) {
+      setShowVideoRecorder(true)
+    } else {
+      videoCaptureInputRef.current?.click()
+    }
   }
 
   async function handlePost() {
@@ -267,50 +302,72 @@ export function NewPostForm({ eventId, faceAlbumEnabled, onPosted }: NewPostForm
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {isNative ? (
               <>
                 <button
+                  type="button"
                   onClick={() => pickNativePhoto(CameraSource.Camera)}
-                  className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
+                  className="ev-btn-ghost flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
                 >
                   <span className="text-2xl">📷</span>
                   <span className="text-sm font-medium">Câmera</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => pickNativePhoto(CameraSource.Photos)}
-                  className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
+                  className="ev-btn-ghost flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
                 >
                   <span className="text-2xl">🖼️</span>
                   <span className="text-sm font-medium">Galeria</span>
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => photoInputRef.current?.click()}
-                className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
-              >
-                <span className="text-2xl">📷</span>
-                <span className="text-sm font-medium">Foto</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => photoCameraInputRef.current?.click()}
+                  className="ev-btn-ghost flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
+                >
+                  <span className="text-2xl">📷</span>
+                  <span className="text-sm font-medium">Câmera</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => photoGalleryInputRef.current?.click()}
+                  className="ev-btn-ghost flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
+                >
+                  <span className="text-2xl">🖼️</span>
+                  <span className="text-sm font-medium">Galeria</span>
+                </button>
+              </>
             )}
             <button
-              onClick={() => videoInputRef.current?.click()}
-              className="ev-btn-ghost flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
+              type="button"
+              onClick={openVideoRecorder}
+              className="ev-btn-ghost flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
             >
               <span className="text-2xl">🎥</span>
-              <span className="text-sm font-medium">Vídeo</span>
+              <span className="text-sm font-medium">Gravar vídeo</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => videoGalleryInputRef.current?.click()}
+              className="ev-btn-ghost flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed ev-border-subtle px-3 py-5 transition hover:ev-border-accent"
+            >
+              <span className="text-2xl">📁</span>
+              <span className="text-sm font-medium">Vídeo da galeria</span>
             </button>
           </div>
           <p className="text-center text-xs ev-text-muted">
-            Vídeo de até {MAX_VIDEO_SECONDS} segundos.
+            Vídeos de até {MAX_VIDEO_SECONDS} segundos — a gravação para automaticamente no limite.
           </p>
           {error && <p className="text-center text-sm text-red-400">{error}</p>}
         </div>
       )}
 
       <input
-        ref={photoInputRef}
+        ref={photoCameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
@@ -318,12 +375,33 @@ export function NewPostForm({ eventId, faceAlbumEnabled, onPosted }: NewPostForm
         onChange={handlePhotoFile}
       />
       <input
-        ref={videoInputRef}
+        ref={photoGalleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoFile}
+      />
+      <input
+        ref={videoGalleryInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={handleVideoFile}
+      />
+      <input
+        ref={videoCaptureInputRef}
         type="file"
         accept="video/*"
         capture="environment"
         className="hidden"
         onChange={handleVideoFile}
+      />
+
+      <VideoRecorderModal
+        open={showVideoRecorder}
+        maxSeconds={MAX_VIDEO_SECONDS}
+        onClose={() => setShowVideoRecorder(false)}
+        onRecorded={handleRecordedVideo}
       />
     </div>
   )

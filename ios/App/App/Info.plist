@@ -49,6 +49,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Precisamos da câmera para você tirar e postar fotos no feed do evento.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Precisamos do microfone para gravar vídeos com áudio no feed do evento.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Precisamos acessar suas fotos para você escolher uma imagem para postar.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
