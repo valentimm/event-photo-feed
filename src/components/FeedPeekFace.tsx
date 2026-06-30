@@ -8,15 +8,15 @@ interface FeedPeekFaceProps {
 }
 
 export function FeedPeekFace({ face, side, index }: FeedPeekFaceProps) {
-  const { ref, inView } = useInView(0.4)
-  const tilt = side === 'left' ? -12 + (index % 3) * 4 : 12 - (index % 3) * 4
-  const bobDelay = `${(index % 4) * 0.15}s`
+  const { ref, inView } = useInView(0.35)
+  const tilt = side === 'left' ? -5 + (index % 3) * 2 : 5 - (index % 3) * 2
+  const bobDelay = `${(index % 4) * 0.4}s`
 
   return (
     <div
       ref={ref}
-      className={`feed-peek-face pointer-events-none absolute top-[18%] z-0 ${
-        side === 'left' ? '-left-2 sm:-left-4' : '-right-2 sm:-right-4'
+      className={`feed-peek-face pointer-events-none absolute top-[22%] z-0 ${
+        side === 'left' ? '-left-5 sm:-left-6' : '-right-5 sm:-right-6'
       }`}
       aria-hidden
     >
@@ -32,9 +32,8 @@ export function FeedPeekFace({ face, side, index }: FeedPeekFaceProps) {
         <img
           src={face.image_url}
           alt=""
-          className="feed-peek-face-img h-[4.5rem] w-[4.5rem] rounded-full object-cover sm:h-20 sm:w-20"
+          className="feed-peek-face-img h-[4.5rem] w-[4.5rem] rounded-full object-cover sm:h-[5.25rem] sm:w-[5.25rem]"
         />
-        <span className="feed-peek-eyes absolute -right-0.5 -top-1 text-base sm:text-lg">👀</span>
       </div>
     </div>
   )
