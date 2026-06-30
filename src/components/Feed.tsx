@@ -98,7 +98,11 @@ export function Feed({ event }: FeedProps) {
   const activePeekFaces = peekFacesEnabled ? peekFaces : []
 
   return (
-    <main className="feed-peek-root mx-auto max-w-xl space-y-4 px-4 py-5">
+    <main
+      className={`mx-auto max-w-xl space-y-4 py-5 ${
+        activePeekFaces.length > 0 ? 'feed-peek-root feed-peek-root--active px-6 sm:px-8' : 'px-4'
+      }`}
+    >
       <NewPostForm
         eventId={eventId}
         faceAlbumEnabled={faceAlbumEnabled}
