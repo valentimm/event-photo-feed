@@ -22,6 +22,7 @@ export interface Event {
   challenges_enabled: boolean
   challenges_title: string
   face_album_enabled: boolean
+  feed_peek_faces_enabled: boolean
   teams_enabled: boolean
   created_at: string
 }
@@ -38,6 +39,16 @@ export interface EventFace {
 
 export interface FaceAlbumEntry extends EventFace {
   photoCount: number
+}
+
+export interface EventFeedPeekFace {
+  id: string
+  event_id: string
+  name: string
+  image_url: string
+  image_path: string | null
+  sort_order: number
+  created_at: string
 }
 
 export interface EventChallenge {

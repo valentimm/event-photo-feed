@@ -17,6 +17,7 @@ import { EventBrandingForm } from '../../components/EventBrandingForm'
 import { EventChallengesForm } from '../../components/EventChallengesForm'
 import { EventTeamsForm } from '../../components/EventTeamsForm'
 import { EventFaceAlbumForm } from '../../components/EventFaceAlbumForm'
+import { EventFeedPeekFacesForm } from '../../components/EventFeedPeekFacesForm'
 
 export function AdminEventPage() {
   const { eventId } = useParams<{ eventId: string }>()
@@ -165,6 +166,8 @@ export function AdminEventPage() {
         <EventTeamsForm event={event} onUpdated={setEvent} />
 
         <EventFaceAlbumForm event={event} onUpdated={setEvent} />
+
+        <EventFeedPeekFacesForm event={event} onUpdated={setEvent} />
 
         <QrCodeCard url={joinUrl} />
 
