@@ -243,3 +243,95 @@ body {
 .challenge-progress-indeterminate {
   animation: progress-indeterminate 1.2s ease-in-out infinite;
 }
+
+/* Rostos espiando por trás dos cards no feed */
+.feed-peek-root {
+  overflow-x: clip;
+}
+
+.feed-peek-card-wrap {
+  overflow: visible;
+}
+
+.feed-peek-face-inner {
+  position: relative;
+  opacity: 0.35;
+  transform: translateX(var(--peek-offset, 55%)) rotate(var(--peek-tilt, 8deg)) scale(0.82);
+  transition:
+    transform 0.65s cubic-bezier(0.34, 1.35, 0.64, 1),
+    opacity 0.45s ease;
+}
+
+.feed-peek-face-inner.feed-peek-face-visible {
+  opacity: 1;
+  transform: translateX(var(--peek-offset-visible, 18%)) rotate(calc(var(--peek-tilt, 8deg) * 0.6))
+    scale(1);
+  animation: feed-peek-bob 2.8s ease-in-out infinite;
+  animation-delay: var(--peek-delay, 0s);
+}
+
+.feed-peek-face-left {
+  --peek-offset: -55%;
+  --peek-offset-visible: -22%;
+}
+
+.feed-peek-face-right {
+  --peek-offset: 55%;
+  --peek-offset-visible: 22%;
+}
+
+.feed-peek-face-img {
+  border: 3px solid color-mix(in srgb, var(--ev-primary) 45%, white);
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--ev-primary) 25%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.feed-peek-eyes {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  animation: feed-peek-blink 4s ease-in-out infinite;
+  animation-delay: var(--peek-delay, 0s);
+}
+
+@keyframes feed-peek-bob {
+  0%,
+  100% {
+    transform: translateX(var(--peek-offset-visible, 18%))
+      rotate(calc(var(--peek-tilt, 8deg) * 0.6)) scale(1) translateY(0);
+  }
+  50% {
+    transform: translateX(calc(var(--peek-offset-visible, 18%) * 0.85))
+      rotate(calc(var(--peek-tilt, 8deg) * 0.85)) scale(1.03) translateY(-4px);
+  }
+}
+
+@keyframes feed-peek-blink {
+  0%,
+  92%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  94% {
+    opacity: 0.2;
+    transform: scale(0.85);
+  }
+  96% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes feed-peek-preview-wiggle {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+.feed-peek-preview {
+  animation: feed-peek-preview-wiggle 2s ease-in-out infinite;
+}

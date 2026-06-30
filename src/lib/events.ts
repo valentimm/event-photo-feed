@@ -1,6 +1,6 @@
 import { PHOTOS_BUCKET, supabase } from './supabase'
 import { DEFAULT_EVENT_THEME, normalizeHexColor } from './eventTheme'
-import type { Event, EventChallenge, EventFace, EventStats, EventTeam, EventUserRow, EventWithStats, FaceAlbumEntry, Photo } from './types'
+import type { Event, EventChallenge, EventFace, EventFeedPeekFace, EventStats, EventTeam, EventUserRow, EventWithStats, FaceAlbumEntry, Photo } from './types'
 import { matchImageToKnownFaces } from './faceRecognition'
 
 export async function fetchEvent(eventId: string): Promise<Event | null> {
@@ -451,6 +451,84 @@ export async function deleteEventFace(face: EventFace): Promise<void> {
     await supabase.storage.from(PHOTOS_BUCKET).remove([face.reference_image_path])
   }
   const { error } = await supabase.from('event_faces').delete().eq('id', face.id)
+  if (error) throw error
+}
+
+export async function updateFeedPeekFacesSettings(
+  eventId: string,
+  feedPeekFacesEnabled: boolean,
+): Promise<Event> {
+  const { data, error } = await supabase
+    .from('events')
+    .update({ feed_peek_faces_enabled: feedPeekFacesEnabled })
+    .eq('id', eventId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Event
+}
+
+export async function fetchEventFeedPeekFaces(eventId: string): Promise<EventFeedPeekFace[]> {
+  const { data, error } = await supabase
+    .from('event_feed_peek_faces')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data as EventFeedPeekFace[]) ?? []
+}
+
+export async function uploadFeedPeekFaceImage(
+  eventId: string,
+  file: Blob,
+): Promise<{ publicUrl: string; path: string }> {
+  const path = `${eventId}/peek-faces/${crypto.randomUUID()}.jpg`
+  const { error: uploadError } = await supabase.storage
+    .from(PHOTOS_BUCKET)
+    .upload(path, file, {
+      cacheControl: '3600',
+      contentType: 'image/jpeg',
+      upsert: false,
+    })
+  if (uploadError) throw uploadError
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(PHOTOS_BUCKET).getPublicUrl(path)
+  return { publicUrl, path }
+}
+
+export async function createEventFeedPeekFace(input: {
+  eventId: string
+  name: string
+  imageUrl: string
+  imagePath: string
+  sortOrder?: number
+}): Promise<EventFeedPeekFace> {
+  const trimmed = input.name.trim()
+  if (!trimmed) throw new Error('Digite o nome da pessoa.')
+
+  const { data, error } = await supabase
+    .from('event_feed_peek_faces')
+    .insert({
+      event_id: input.eventId,
+      name: trimmed,
+      image_url: input.imageUrl,
+      image_path: input.imagePath,
+      sort_order: input.sortOrder ?? 0,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as EventFeedPeekFace
+}
+
+export async function deleteEventFeedPeekFace(face: EventFeedPeekFace): Promise<void> {
+  if (face.image_path) {
+    await supabase.storage.from(PHOTOS_BUCKET).remove([face.image_path])
+  }
+  const { error } = await supabase.from('event_feed_peek_faces').delete().eq('id', face.id)
   if (error) throw error
 }
 

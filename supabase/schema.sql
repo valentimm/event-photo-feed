@@ -35,6 +35,7 @@ create table if not exists public.events (
   challenges_enabled boolean not null default false,
   challenges_title text not null default 'Desafios',
   face_album_enabled boolean not null default false,
+  feed_peek_faces_enabled boolean not null default false,
   teams_enabled boolean not null default false,
   created_at  timestamptz not null default now()
 );
@@ -139,6 +140,16 @@ create table if not exists public.photo_face_matches (
   unique (photo_id, event_face_id)
 );
 
+create table if not exists public.event_feed_peek_faces (
+  id          uuid primary key default gen_random_uuid(),
+  event_id    uuid not null references public.events (id) on delete cascade,
+  name        text not null,
+  image_url   text not null,
+  image_path  text,
+  sort_order  int not null default 0,
+  created_at  timestamptz not null default now()
+);
+
 -- Indices uteis para o feed
 create index if not exists photos_event_created_idx on public.photos (event_id, created_at desc);
 create index if not exists photos_created_at_idx on public.photos (created_at desc);
@@ -150,6 +161,7 @@ create index if not exists event_teams_event_idx on public.event_teams (event_id
 create index if not exists event_faces_event_idx on public.event_faces (event_id);
 create index if not exists photo_face_matches_face_idx on public.photo_face_matches (event_face_id);
 create index if not exists photo_face_matches_photo_idx on public.photo_face_matches (photo_id);
+create index if not exists event_feed_peek_faces_event_idx on public.event_feed_peek_faces (event_id, sort_order);
 
 -- ---------------------------------------------------------------------
 -- Row Level Security (publico - sem Supabase Auth)
@@ -167,6 +179,7 @@ alter table public.event_challenges enable row level security;
 alter table public.challenge_completions enable row level security;
 alter table public.event_faces enable row level security;
 alter table public.photo_face_matches enable row level security;
+alter table public.event_feed_peek_faces enable row level security;
 
 -- Policies abertas para a chave anon (leitura/escrita liberadas).
 do $$
@@ -218,6 +231,10 @@ begin
   -- photo_face_matches
   if not exists (select 1 from pg_policies where tablename = 'photo_face_matches' and policyname = 'photo_face_matches_public_all') then
     create policy photo_face_matches_public_all on public.photo_face_matches for all using (true) with check (true);
+  end if;
+  -- event_feed_peek_faces
+  if not exists (select 1 from pg_policies where tablename = 'event_feed_peek_faces' and policyname = 'event_feed_peek_faces_public_all') then
+    create policy event_feed_peek_faces_public_all on public.event_feed_peek_faces for all using (true) with check (true);
   end if;
 end $$;
 

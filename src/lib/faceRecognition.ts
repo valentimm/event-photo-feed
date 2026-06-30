@@ -60,6 +60,54 @@ export async function extractPrimaryFaceDescriptor(
   return detection?.descriptor ?? null
 }
 
+/** Recorta somente o rosto principal de uma imagem (para fotos de corpo inteiro). */
+export async function cropPrimaryFaceFromImage(source: File | Blob): Promise<Blob> {
+  await loadFaceModels()
+  const faceapi = await getFaceApi()
+  const previewUrl = URL.createObjectURL(source)
+  try {
+    const img = await faceapi.fetchImage(previewUrl)
+    const detection = await faceapi.detectSingleFace(img).withFaceLandmarks()
+    if (!detection) {
+      throw new Error('Nenhum rosto detectado. Use uma foto com o rosto bem visível.')
+    }
+
+    const box = detection.detection.box
+    const padding = Math.max(box.width, box.height) * 0.4
+    const size = Math.max(box.width, box.height) + padding * 2
+    const centerX = box.x + box.width / 2
+    const centerY = box.y + box.height / 2
+
+    let x = centerX - size / 2
+    let y = centerY - size / 2
+    if (x < 0) x = 0
+    if (y < 0) y = 0
+    if (x + size > img.width) x = Math.max(0, img.width - size)
+    if (y + size > img.height) y = Math.max(0, img.height - size)
+
+    const cropW = Math.min(size, img.width - x)
+    const cropH = Math.min(size, img.height - y)
+
+    const canvas = document.createElement('canvas')
+    canvas.width = cropW
+    canvas.height = cropH
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Não foi possível processar a imagem.')
+
+    ctx.drawImage(img, x, y, cropW, cropH, 0, 0, cropW, cropH)
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('Falha ao recortar rosto.'))),
+        'image/jpeg',
+        0.92,
+      )
+    })
+  } finally {
+    URL.revokeObjectURL(previewUrl)
+  }
+}
+
 export interface KnownFace {
   id: string
   descriptor: number[]

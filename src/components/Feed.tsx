@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
+import { fetchEventFeedPeekFaces } from '../lib/events'
 import { supabase } from '../lib/supabase'
 import { groupPhotosByDay } from '../lib/format'
-import type { Event, Photo } from '../lib/types'
+import type { Event, EventFeedPeekFace, Photo } from '../lib/types'
+import { FeedCardsList, TimelineCardsList } from './FeedCardsList'
 import { MediaLightbox } from './MediaLightbox'
 import { NewPostForm } from './NewPostForm'
 import { PersonAlbumsView } from './PersonAlbumsView'
-import { PhotoCard } from './PhotoCard'
 import { VideoPlayOverlay } from './VideoPlayOverlay'
 
 const PHOTO_QUERY =
@@ -20,7 +21,9 @@ interface FeedProps {
 export function Feed({ event }: FeedProps) {
   const eventId = event.id
   const faceAlbumEnabled = event.face_album_enabled ?? false
+  const peekFacesEnabled = event.feed_peek_faces_enabled ?? false
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [peekFaces, setPeekFaces] = useState<EventFeedPeekFace[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>('feed')
@@ -45,6 +48,24 @@ export function Feed({ event }: FeedProps) {
   useEffect(() => {
     void loadPhotos()
   }, [loadPhotos])
+
+  useEffect(() => {
+    if (!peekFacesEnabled) {
+      setPeekFaces([])
+      return
+    }
+    let cancelled = false
+    void fetchEventFeedPeekFaces(eventId)
+      .then((faces) => {
+        if (!cancelled) setPeekFaces(faces)
+      })
+      .catch(() => {
+        if (!cancelled) setPeekFaces([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [eventId, peekFacesEnabled])
 
   // Atualização em tempo real (estilo Dots — feed vivo durante o evento)
   useEffect(() => {
@@ -74,9 +95,10 @@ export function Feed({ event }: FeedProps) {
   }, [photos])
 
   const timelineGroups = groupPhotosByDay(photos)
+  const activePeekFaces = peekFacesEnabled ? peekFaces : []
 
   return (
-    <main className="mx-auto max-w-xl space-y-4 px-4 py-5">
+    <main className="feed-peek-root mx-auto max-w-xl space-y-4 px-4 py-5">
       <NewPostForm
         eventId={eventId}
         faceAlbumEnabled={faceAlbumEnabled}
@@ -125,15 +147,14 @@ export function Feed({ event }: FeedProps) {
         </div>
       )}
 
-      {view === 'feed' &&
-        photos.map((photo) => (
-          <PhotoCard
-            key={photo.id}
-            photo={photo}
-            onDeleted={handleDeleted}
-            onMediaClick={() => openLightbox(photo.id)}
-          />
-        ))}
+      {view === 'feed' && (
+        <FeedCardsList
+          photos={photos}
+          peekFaces={activePeekFaces}
+          onDeleted={handleDeleted}
+          onMediaClick={openLightbox}
+        />
+      )}
 
       {view === 'grid' && photos.length > 0 && (
         <div className="grid grid-cols-3 gap-1 sm:grid-cols-4">
@@ -167,24 +188,14 @@ export function Feed({ event }: FeedProps) {
         </div>
       )}
 
-      {view === 'timeline' &&
-        timelineGroups.map((group) => (
-          <section key={group.label}>
-            <div className="ev-sticky-bar sticky top-[57px] z-[5] mb-3 border-b ev-border-accent-soft py-2">
-              <h3 className="text-sm font-semibold capitalize ev-text-accent-strong">{group.label}</h3>
-            </div>
-            <div className="space-y-4">
-              {group.items.map((photo) => (
-                <PhotoCard
-                  key={photo.id}
-                  photo={photo}
-                  onDeleted={handleDeleted}
-                  onMediaClick={() => openLightbox(photo.id)}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
+      {view === 'timeline' && (
+        <TimelineCardsList
+          groups={timelineGroups}
+          peekFaces={activePeekFaces}
+          onDeleted={handleDeleted}
+          onMediaClick={openLightbox}
+        />
+      )}
 
       {view === 'people' && faceAlbumEnabled && <PersonAlbumsView eventId={eventId} />}
 
